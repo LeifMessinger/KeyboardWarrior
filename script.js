@@ -272,6 +272,145 @@ class AccessibilityMIDIKeyboard {
     }
 }
 
+function parseMusicScript(input) {
+    this.notes = [];
+    try{
+        const lines = input.split('\n');
+        let currentTime = 0;
+        let stepDuration = 0;
+
+        lines.forEach(line => {
+            if (line.startsWith('step')) {
+                if(!(line.includes(" "))) return;
+                const stepParts = line.split(' ');
+                const stepFraction = stepParts[1]?.split('/');
+                stepDuration = 1 / (parseInt(stepFraction[1]) / parseInt(stepFraction[0]));
+            } else if (line.trim() !== '') {
+                if (line.trim() === 'rest') {
+                    currentTime += stepDuration;
+                } else {
+                    const octaveStructure = [
+                        //Ocatve -1
+                        { note: 48, black: false, key:"C" }, // C
+                        { note: 49, black: true , key:"C#" }, // C#
+                        { note: 50, black: false, key:"D" }, // D
+                        { note: 51, black: true , key:"D#" }, // D#
+                        { note: 52, black: false, key:"E" }, // E
+                        { note: 53, black: false, key:"F" }, // F
+                        { note: 54, black: true , key:"F#" }, // F#
+                        { note: 55, black: false, key:"G" }, // G
+                        { note: 56, black: true , key:"G#" }, // G#
+                        { note: 57, black: false, key:"A" }, // A
+                        { note: 58, black: true , key:"A#" }, // A#
+                        { note: 59, black: false, key:"B" },  // B
+                        //Ocatve 0
+                        { note: 60, black: false, key: "C", key:"C" }, // C
+                        { note: 61, black: true , key:"C#" }, // C#
+                        { note: 62, black: false, key:"D" }, // D
+                        { note: 63, black: true , key:"D#" }, // D#
+                        { note: 64, black: false, key:"E" }, // E
+                        { note: 65, black: false, key:"F" }, // F
+                        { note: 66, black: true , key:"F#" }, // F#
+                        { note: 67, black: false, key:"G" }, // G
+                        { note: 68, black: true , key:"G#" }, // G#
+                        { note: 69, black: false, key:"A" }, // A
+                        { note: 70, black: true , key:"A#" }, // A#
+                        { note: 71, black: false, key:"B" },  // B
+                        //Ocatve + 1
+                        { note: 72, black: false, key:"C" }, // C
+                        { note: 73, black: true , key:"C#" }, // C#
+                        { note: 74, black: false, key:"D" }, // D
+                        { note: 75, black: true , key:"D#" }, // D#
+                        { note: 76, black: false, key:"E" }, // E
+                        { note: 77, black: false, key:"F" }, // F
+                        { note: 78, black: true , key:"F#" }, // F#
+                        { note: 79, black: false, key:"G" }, // G
+                        { note: 80, black: true , key:"G#" }, // G#
+                        { note: 81, black: false, key:"A" }, // A
+                        { note: 82, black: true , key:"A#" }, // A#
+                        { note: 83, black: false, key:"B" }  // B
+                    ];
+
+                    const noteLetter = line.trim();
+                    const noteValue = this.noteMap.find(n => n.key === noteLetter).note;
+
+                    this.notes.push({
+                        noteValue,
+                        noteLetter,
+                        startTime: currentTime,
+                        endTime: currentTime + stepDuration
+                    });
+                    currentTime += stepDuration;
+                }
+            }
+        });
+    }catch(e){
+        return []
+    }
+    return notes
+}
+
+class Game{
+    constructor(canvas){
+        this.canvas = canvas
+        this.canvasContext = canvas.getContext("2d");
+        this.notes = []
+        this.start = 0;
+        this.end =  1;
+        this.highestNote = undefined;
+        this.lowestNote = undefined;
+
+        window.requestAnimationFrame(()=>{this.draw()});
+    }
+
+    setNotes(notes){
+        this.notes = notes ?? this.notes
+        this.end = Math.max.apply(undefined, notes.map((note)=>note.endTime))
+        this.highestNote = Math.max.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
+        this.lowestNote = Math.max.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
+    }
+
+    draw(){
+        if((this.end == 0) ||
+            (!this.highestNote) ||
+            (!this.lowestNote)){
+                return;
+        }
+
+        //Draw background
+        this.canvasContext.fillStyle = "magenta";
+        this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        function uvX(x){
+            return x * this.canvas.width
+        }
+        function uvY(x){
+            return y * this.canvas.height
+        }
+        //returns a blend of a and b
+        function lerp( a, b, zeroToOne ) {
+            return a + zeroToOne * ( b - a )
+        }
+        //returns a fraction
+        function invLerp(x, a, b){
+            return (x - a) / (a - b)
+        }
+
+        //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
+        const noteHeight = 1.0/(this.notes.highestNote - this.notes.lowestNote);
+
+        this.canvasContext.fillStyle = "blue";
+        for(let note of this.notes){
+            const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
+            const xStart = invLerp(note.endTime, this.start, this.end)
+            const xEnd = invLerp(note.endTime, this.start, this.end)
+
+            this.canvasContext.beginPath(); // Start a new path
+            this.canvasContext.fillRect(uvX(xStart), uvY(y), uvX(xEnd), uvY(y + noteHeight)); // Add a rectangle to the current path
+        }
+    }
+}
+
 // Initialize the application
 const audioPlayer = new AudioPlayer();
 const midiInput = new MIDIInput(audioPlayer);
@@ -306,3 +445,44 @@ document.getElementById('volume').addEventListener('input', (e) => {
 var editor = ace.edit("editor", {fontSize: "20pt"});
 editor.setTheme("ace/theme/monokai");
 //editor.session.setMode("ace/mode/javascript");
+
+const songList = {
+    "Heart and Soul": "step 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\nB\r\nrest\r\nA\r\nB\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\noctave 1\r\nA\r\noctave 0\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nB\r\nstep 1/4\r\nC\r\n\r\nstep 1/8\r\nrest\r\nB\r\nstep 1/4\r\nA\r\noctave -1\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\noctave 0\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB"
+}
+
+function autorun() {
+    const elm = document.getElementById("songList");
+    if(elm){
+        for(let song of Object.keys(songList)){
+            let tab = document.createElement("td");
+            let button = document.createElement("button");
+            button.textContent = song;
+            button.onclick = ()=>{
+                editor.setValue(songList[song], -1) // moves cursor to the start
+            };
+            tab.appendChild(button)
+            elm.appendChild(tab);
+        }
+    }
+
+    const canvas = document.getElementById("roll");
+    const game = new Game(canvas);
+    if(canvas){
+        const session = editor.getSession();
+        function updateNotes(data, data2){
+            //There's a lot of cool stuff in here
+            //console.log(data)
+
+            //In here, you can look at the breakpoints n stuff
+            //console.log(data2)
+
+            const notes = parseMusicScript(editor.getValue());
+            game.setNotes(notes);
+        }
+        updateNotes();
+        session.on('change', updateNotes);
+    }
+}
+if (document.addEventListener)
+document.addEventListener('DOMContentLoaded', autorun, false)
+else window.onload = autorun
