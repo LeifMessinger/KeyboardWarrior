@@ -71,13 +71,13 @@ class MIDIInput extends EventTarget {
     constructor(audioPlayer) {
         super();
         this.audioPlayer = audioPlayer;
-        this.noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     }
 
-    getMIDINoteInfo(note) {
+    static getMIDINoteInfo(note) {
         const octave = Math.floor(note / 12) - 1;
         const noteIndex = note % 12;
-        const noteName = this.noteNames[noteIndex];
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const noteName = noteNames[noteIndex];
         return {
             note,
             noteName,
@@ -144,10 +144,18 @@ class PianoKeyboard {
         this.setup();
     }
 
-    createKey(note, isBlack = false) {
+    createKey(keyData) {
         const key = document.createElement('div');
-        key.className = `key${isBlack ? ' black-key' : ''}`;
-        key.dataset.note = note;
+        key.className = `key${keyData.black ? ' black-key' : ''}`;
+        Object.assign(key.dataset, keyData);
+        key.setAttribute("draggable", true);
+        key.addEventListener('dragstart', function(event) {
+            console.log(key.dataset);
+            event.dataTransfer.setData('text/plain', key.dataset.key + "\n");
+        });
+        key.addEventListener('dragend', (event)=>{
+            this.audioPlayer.stopAll();
+        });
         return key;
     }
 
@@ -157,48 +165,48 @@ class PianoKeyboard {
 
         const octaveStructure = [
             //Ocatve -1
-            { note: 48, black: false }, // C
-            { note: 49, black: true  }, // C#
-            { note: 50, black: false }, // D
-            { note: 51, black: true  }, // D#
-            { note: 52, black: false }, // E
-            { note: 53, black: false }, // F
-            { note: 54, black: true  }, // F#
-            { note: 55, black: false }, // G
-            { note: 56, black: true  }, // G#
-            { note: 57, black: false }, // A
-            { note: 58, black: true  }, // A#
-            { note: 59, black: false },  // B
+            { note: 48, black: false, key:"C" }, // C
+            { note: 49, black: true , key:"C#" }, // C#
+            { note: 50, black: false, key:"D" }, // D
+            { note: 51, black: true , key:"D#" }, // D#
+            { note: 52, black: false, key:"E" }, // E
+            { note: 53, black: false, key:"F" }, // F
+            { note: 54, black: true , key:"F#" }, // F#
+            { note: 55, black: false, key:"G" }, // G
+            { note: 56, black: true , key:"G#" }, // G#
+            { note: 57, black: false, key:"A" }, // A
+            { note: 58, black: true , key:"A#" }, // A#
+            { note: 59, black: false, key:"B" },  // B
             //Ocatve 0
-            { note: 60, black: false }, // C
-            { note: 61, black: true  }, // C#
-            { note: 62, black: false }, // D
-            { note: 63, black: true  }, // D#
-            { note: 64, black: false }, // E
-            { note: 65, black: false }, // F
-            { note: 66, black: true  }, // F#
-            { note: 67, black: false }, // G
-            { note: 68, black: true  }, // G#
-            { note: 69, black: false }, // A
-            { note: 70, black: true  }, // A#
-            { note: 71, black: false },  // B
+            { note: 60, black: false, key: "C", key:"C" }, // C
+            { note: 61, black: true , key:"C#" }, // C#
+            { note: 62, black: false, key:"D" }, // D
+            { note: 63, black: true , key:"D#" }, // D#
+            { note: 64, black: false, key:"E" }, // E
+            { note: 65, black: false, key:"F" }, // F
+            { note: 66, black: true , key:"F#" }, // F#
+            { note: 67, black: false, key:"G" }, // G
+            { note: 68, black: true , key:"G#" }, // G#
+            { note: 69, black: false, key:"A" }, // A
+            { note: 70, black: true , key:"A#" }, // A#
+            { note: 71, black: false, key:"B" },  // B
             //Ocatve + 1
-            { note: 72, black: false }, // C
-            { note: 73, black: true  }, // C#
-            { note: 74, black: false }, // D
-            { note: 75, black: true  }, // D#
-            { note: 76, black: false }, // E
-            { note: 77, black: false }, // F
-            { note: 78, black: true  }, // F#
-            { note: 79, black: false }, // G
-            { note: 80, black: true  }, // G#
-            { note: 81, black: false }, // A
-            { note: 82, black: true  }, // A#
-            { note: 83, black: false }  // B
+            { note: 72, black: false, key:"C" }, // C
+            { note: 73, black: true , key:"C#" }, // C#
+            { note: 74, black: false, key:"D" }, // D
+            { note: 75, black: true , key:"D#" }, // D#
+            { note: 76, black: false, key:"E" }, // E
+            { note: 77, black: false, key:"F" }, // F
+            { note: 78, black: true , key:"F#" }, // F#
+            { note: 79, black: false, key:"G" }, // G
+            { note: 80, black: true , key:"G#" }, // G#
+            { note: 81, black: false, key:"A" }, // A
+            { note: 82, black: true , key:"A#" }, // A#
+            { note: 83, black: false, key:"B" }  // B
         ];
 
-        octaveStructure.forEach(({ note, black }) => {
-            const key = this.createKey(note, black);
+        octaveStructure.forEach((keyData) => {
+            const key = this.createKey(keyData);
             piano.appendChild(key);
         });
 
@@ -209,15 +217,20 @@ class PianoKeyboard {
     setupEventListeners() {
         // Mouse events only for visualization
         this.container.addEventListener('mousedown', (e) => {
+            this.audioPlayer.stopAll();
+
             const key = e.target.closest('.key');
             if (key) {
+                const activeKeys = this.container.querySelectorAll('.key.active');
+                activeKeys.forEach((thatKey) =>{
+                    if(thatKey != key)
+                        thatKey.classList.remove('active')
+                });
                 key.classList.add('active');
                 
                 const note = parseInt(key.dataset.note);
+                const noteInfo = MIDIInput.getMIDINoteInfo(note);
                 this.audioPlayer.playNote(note);
-                this.dispatchEvent(new CustomEvent('noteon', { 
-                    detail: { ...noteInfo}
-                }));
             }
         });
 
@@ -226,7 +239,6 @@ class PianoKeyboard {
             activeKeys.forEach(key => key.classList.remove('active'));
 
             this.audioPlayer.stopAll();
-            this.dispatchEvent(new CustomEvent('noteoff'));
         });
     }
 
