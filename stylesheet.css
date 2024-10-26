@@ -1,0 +1,44 @@
+
+.piano {
+    display: flex;
+    margin: 20px;
+}
+.key {
+    border: 1px solid #000;
+    width: 40px;
+    height: 120px;
+    background: white;
+    margin: 0 2px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 10px;
+    user-select: none;
+}
+.black-key {
+    background: black;
+    color: white;
+    height: 80px;
+    width: 30px;
+    margin-left: -15px;
+    margin-right: -15px;
+    z-index: 1;
+}
+.key.active {
+    background: #ddd;
+}
+.black-key.active {
+    background: #333;
+}
+#controls {
+    margin: 20px;
+    font-family: sans-serif;
+}
+select, input {
+    margin: 0 10px;
+}
+#midiStatus {
+    color: #666;
+    margin-top: 10px;
+}

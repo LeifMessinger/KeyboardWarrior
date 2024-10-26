@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KeyboardWarrior</title>
+    <meta name="description" content="description"/>
+    <meta name="author" content="author" />
+    <meta name="keywords" content="keywords" />
+    <link rel="stylesheet" href="./stylesheet.css" type="text/css" />
+  </head>
+  <body>
+    
+    <div id="controls">
+        <button id="midiConnectBtn">Connect MIDI</button>
+        <label>Waveform: 
+            <select id="waveform">
+                <option value="triangle">Triangle</option>
+                <option value="sawtooth">Sawtooth</option>
+                <option value="square">Square</option>
+                <option value="sine">Sine</option>
+            </select>
+        </label>
+        <label>Volume: 
+            <input type="range" id="volume" min="0" max="100" value="50">
+        </label>
+        <div id="midiStatus">MIDI not connected</div>
+    </div>
+    <div id="pianoContainer"></div>
+
+    <script type="text/javascript" src="script.js"></script>
+  </body>
+</html>
