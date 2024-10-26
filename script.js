@@ -303,3 +303,7 @@ document.getElementById('waveform').addEventListener('change', (e) => {
 document.getElementById('volume').addEventListener('input', (e) => {
     audioPlayer.setVolume(e.target.value / 100);
 });
+
+var editor = ace.edit("editor", {fontSize: "20pt"});
+editor.setTheme("ace/theme/monokai");
+//editor.session.setMode("ace/mode/javascript");

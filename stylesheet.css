@@ -10,6 +10,18 @@ textarea {
     flex: .3 1;
     height: 100%;
 }
+.editorWrapper {
+    position: relative;
+    flex: .3 1;
+    height: 100%;
+}
+#editor { 
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
 canvas {
     flex: 1 1;
     width: 50%;
@@ -69,7 +81,7 @@ canvas {
     background: linear-gradient(to right, #000 60%, #FFF 75%, #000 76%, #FFF 77%);
 }
 #controls {
-    margin: 20px;
+    padding: 20px;
     font-family: sans-serif;
 }
 select, input {
