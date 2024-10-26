@@ -150,7 +150,6 @@ class PianoKeyboard {
         Object.assign(key.dataset, keyData);
         key.setAttribute("draggable", true);
         key.addEventListener('dragstart', function(event) {
-            console.log(key.dataset);
             event.dataTransfer.setData('text/plain', key.dataset.key + "\n");
         });
         key.addEventListener('dragend', (event)=>{
