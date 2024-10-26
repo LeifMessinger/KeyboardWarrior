@@ -273,36 +273,33 @@ class AccessibilityMIDIKeyboard {
 }
 
 function parseMusicScript(input) {
-    this.notes = [];
+    let notes = [];
+    let octave = 0;
+    let step = .25;
+    let currentTime = 0;
+    let stepDuration = 0;
+
     try{
         const lines = input.split('\n');
-        let currentTime = 0;
-        let stepDuration = 0;
 
         lines.forEach(line => {
-            if (line.startsWith('step')) {
+            if (line.startsWith('octave')) {
                 if(!(line.includes(" "))) return;
-                const stepParts = line.split(' ');
-                const stepFraction = stepParts[1]?.split('/');
-                stepDuration = 1 / (parseInt(stepFraction[1]) / parseInt(stepFraction[0]));
+                octave = parseInt(line.split(" ")[1])
+            } else if (line.startsWith('step')) {
+                if(!(line.includes(" "))) return;
+                if(line.includes('/')){
+                    const stepParts = line.split(' ');
+                    const stepFraction = stepParts[1]?.split('/');
+                    stepDuration = 1 / (parseInt(stepFraction[1]) / parseInt(stepFraction[0]));
+                }else{
+                    stepDuration = parseInt(line.split(' '))
+                }
             } else if (line.trim() !== '') {
                 if (line.trim() === 'rest') {
                     currentTime += stepDuration;
                 } else {
                     const octaveStructure = [
-                        //Ocatve -1
-                        { note: 48, black: false, key:"C" }, // C
-                        { note: 49, black: true , key:"C#" }, // C#
-                        { note: 50, black: false, key:"D" }, // D
-                        { note: 51, black: true , key:"D#" }, // D#
-                        { note: 52, black: false, key:"E" }, // E
-                        { note: 53, black: false, key:"F" }, // F
-                        { note: 54, black: true , key:"F#" }, // F#
-                        { note: 55, black: false, key:"G" }, // G
-                        { note: 56, black: true , key:"G#" }, // G#
-                        { note: 57, black: false, key:"A" }, // A
-                        { note: 58, black: true , key:"A#" }, // A#
-                        { note: 59, black: false, key:"B" },  // B
                         //Ocatve 0
                         { note: 60, black: false, key: "C", key:"C" }, // C
                         { note: 61, black: true , key:"C#" }, // C#
@@ -316,25 +313,17 @@ function parseMusicScript(input) {
                         { note: 69, black: false, key:"A" }, // A
                         { note: 70, black: true , key:"A#" }, // A#
                         { note: 71, black: false, key:"B" },  // B
-                        //Ocatve + 1
-                        { note: 72, black: false, key:"C" }, // C
-                        { note: 73, black: true , key:"C#" }, // C#
-                        { note: 74, black: false, key:"D" }, // D
-                        { note: 75, black: true , key:"D#" }, // D#
-                        { note: 76, black: false, key:"E" }, // E
-                        { note: 77, black: false, key:"F" }, // F
-                        { note: 78, black: true , key:"F#" }, // F#
-                        { note: 79, black: false, key:"G" }, // G
-                        { note: 80, black: true , key:"G#" }, // G#
-                        { note: 81, black: false, key:"A" }, // A
-                        { note: 82, black: true , key:"A#" }, // A#
-                        { note: 83, black: false, key:"B" }  // B
                     ];
 
                     const noteLetter = line.trim();
-                    const noteValue = this.noteMap.find(n => n.key === noteLetter).note;
+                    const note = octaveStructure.find(n => n.key.toUpperCase() === noteLetter.toUpperCase());
+                    if(!note){
+                        console.error("Note not found:", noteValue);
+                        throw "shit";
+                    }
+                    const noteValue = note?.note;
 
-                    this.notes.push({
+                    notes.push({
                         noteValue,
                         noteLetter,
                         startTime: currentTime,
@@ -345,6 +334,7 @@ function parseMusicScript(input) {
             }
         });
     }catch(e){
+        console.warn(e)
         return []
     }
     return notes
@@ -359,8 +349,6 @@ class Game{
         this.end =  1;
         this.highestNote = undefined;
         this.lowestNote = undefined;
-
-        window.requestAnimationFrame(()=>{this.draw()});
     }
 
     setNotes(notes){
@@ -381,10 +369,10 @@ class Game{
         this.canvasContext.fillStyle = "magenta";
         this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        function uvX(x){
+        const uvX = (x) => {
             return x * this.canvas.width
         }
-        function uvY(x){
+        const uvY = (y) => {
             return y * this.canvas.height
         }
         //returns a blend of a and b
@@ -476,11 +464,15 @@ function autorun() {
             //In here, you can look at the breakpoints n stuff
             //console.log(data2)
 
-            const notes = parseMusicScript(editor.getValue());
+            const editorValue = editor.getValue();
+            //console.log(editorValue)
+            const notes = parseMusicScript(editorValue);
             game.setNotes(notes);
         }
         updateNotes();
         session.on('change', updateNotes);
+        
+        window.requestAnimationFrame(()=>{game.draw()});
     }
 }
 if (document.addEventListener)
