@@ -43,3 +43,6 @@ select, input {
     color: #666;
     margin-top: 10px;
 }
+details {
+    display: inline;
+}

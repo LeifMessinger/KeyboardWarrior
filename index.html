@@ -12,17 +12,22 @@
     
     <div id="controls">
         <button id="midiConnectBtn">Connect MIDI</button>
-        <label>Waveform: 
-            <select id="waveform">
-                <option value="triangle">Triangle</option>
-                <option value="sawtooth">Sawtooth</option>
-                <option value="square">Square</option>
-                <option value="sine">Sine</option>
-            </select>
-        </label>
-        <label>Volume: 
-            <input type="range" id="volume" min="0" max="100" value="50">
-        </label>
+        <details>
+            <summary>
+                Synth Options
+            </summary>
+            <label>Waveform: 
+                <select id="waveform">
+                    <option value="triangle">Triangle</option>
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="square">Square</option>
+                    <option value="sine">Sine</option>
+                </select>
+            </label>
+            <label>Volume: 
+                <input type="range" id="volume" min="0" max="100" value="50">
+            </label>
+        </details>
         <div id="midiStatus">MIDI not connected</div>
     </div>
     <div id="pianoContainer"></div>
