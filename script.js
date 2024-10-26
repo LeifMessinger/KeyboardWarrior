@@ -120,7 +120,7 @@ class MIDIInput extends EventTarget {
         const command = message.data[0];
         const note = message.data[1];
         const velocity = (message.data.length > 2) ? message.data[2] : 0;
-        const noteInfo = this.getMIDINoteInfo(note);
+        const noteInfo = MIDIInput.getMIDINoteInfo(note);
 
         if ((command === 144) && (velocity > 0)) {
             this.audioPlayer.playNote(note, velocity / 127);
@@ -156,6 +156,7 @@ class PianoKeyboard {
         key.addEventListener('dragend', (event)=>{
             this.audioPlayer.stopAll();
         });
+        key.textContent = key.dataset.key;
         return key;
     }
 
