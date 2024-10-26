@@ -26,7 +26,6 @@ class AudioPlayer {
 
         const frequency = this.midiNoteToFrequency(note);
         
-        // Stop any existing note
         this.stopNote(note);
 
         const oscillator = this.audioContext.createOscillator();
@@ -56,13 +55,35 @@ class AudioPlayer {
             this.activeOscillators.delete(note);
         }
     }
+
+    stopAll(){
+        for(let [note, sound] of this.activeOscillators.entries()){
+            if((!note) || (!sound)) continue;
+            const { oscillator, gainNode } = sound;
+            gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
+            oscillator.stop(this.audioContext.currentTime + 0.05);
+            this.activeOscillators.delete(note);
+        }
+    }
 }
 
-class MIDIInput {
+class MIDIInput extends EventTarget {
     constructor(audioPlayer) {
+        super();
         this.audioPlayer = audioPlayer;
-        this.onNoteOn = null;
-        this.onNoteOff = null;
+        this.noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    }
+
+    getMIDINoteInfo(note) {
+        const octave = Math.floor(note / 12) - 1;
+        const noteIndex = note % 12;
+        const noteName = this.noteNames[noteIndex];
+        return {
+            note,
+            noteName,
+            fullNoteName: `${noteName}${octave}`,
+            octave
+        };
     }
 
     async init() {
@@ -99,13 +120,18 @@ class MIDIInput {
         const command = message.data[0];
         const note = message.data[1];
         const velocity = (message.data.length > 2) ? message.data[2] : 0;
+        const noteInfo = this.getMIDINoteInfo(note);
 
         if ((command === 144) && (velocity > 0)) {
             this.audioPlayer.playNote(note, velocity / 127);
-            if (this.onNoteOn) this.onNoteOn(note);
+            this.dispatchEvent(new CustomEvent('noteon', { 
+                detail: { ...noteInfo, velocity }
+            }));
         } else if ((command === 128) || ((command === 144) && (velocity === 0))) {
             this.audioPlayer.stopNote(note);
-            if (this.onNoteOff) this.onNoteOff(note);
+            this.dispatchEvent(new CustomEvent('noteoff', { 
+                detail: { ...noteInfo, velocity: 0 }
+            }));
         }
     }
 }
@@ -115,25 +141,7 @@ class PianoKeyboard {
         this.container = document.getElementById(containerId);
         this.audioPlayer = audioPlayer;
         this.activeKeys = new Set();
-        this.keyMap = this.createKeyMap();
         this.setup();
-    }
-
-    createKeyMap() {
-        return {
-            'a': 60, // C4
-            'w': 61,
-            's': 62,
-            'e': 63,
-            'd': 64,
-            'f': 65,
-            't': 66,
-            'g': 67,
-            'y': 68,
-            'h': 69,
-            'u': 70,
-            'j': 71  // B4
-        };
     }
 
     createKey(note, isBlack = false) {
@@ -144,12 +152,24 @@ class PianoKeyboard {
     }
 
     setup() {
-        // Create piano container
         const piano = document.createElement('div');
         piano.className = 'piano';
 
-        // Define the structure of a single octave
         const octaveStructure = [
+            //Ocatve -1
+            { note: 48, black: false }, // C
+            { note: 49, black: true  }, // C#
+            { note: 50, black: false }, // D
+            { note: 51, black: true  }, // D#
+            { note: 52, black: false }, // E
+            { note: 53, black: false }, // F
+            { note: 54, black: true  }, // F#
+            { note: 55, black: false }, // G
+            { note: 56, black: true  }, // G#
+            { note: 57, black: false }, // A
+            { note: 58, black: true  }, // A#
+            { note: 59, black: false },  // B
+            //Ocatve 0
             { note: 60, black: false }, // C
             { note: 61, black: true  }, // C#
             { note: 62, black: false }, // D
@@ -161,10 +181,22 @@ class PianoKeyboard {
             { note: 68, black: true  }, // G#
             { note: 69, black: false }, // A
             { note: 70, black: true  }, // A#
-            { note: 71, black: false }  // B
+            { note: 71, black: false },  // B
+            //Ocatve + 1
+            { note: 72, black: false }, // C
+            { note: 73, black: true  }, // C#
+            { note: 74, black: false }, // D
+            { note: 75, black: true  }, // D#
+            { note: 76, black: false }, // E
+            { note: 77, black: false }, // F
+            { note: 78, black: true  }, // F#
+            { note: 79, black: false }, // G
+            { note: 80, black: true  }, // G#
+            { note: 81, black: false }, // A
+            { note: 82, black: true  }, // A#
+            { note: 83, black: false }  // B
         ];
 
-        // Create keys
         octaveStructure.forEach(({ note, black }) => {
             const key = this.createKey(note, black);
             piano.appendChild(key);
@@ -175,48 +207,56 @@ class PianoKeyboard {
     }
 
     setupEventListeners() {
-        // Mouse/touch events
+        // Mouse events only for visualization
         this.container.addEventListener('mousedown', (e) => {
             const key = e.target.closest('.key');
             if (key) {
+                key.classList.add('active');
+                
                 const note = parseInt(key.dataset.note);
-                this.playNote(note);
+                this.audioPlayer.playNote(note);
+                this.dispatchEvent(new CustomEvent('noteon', { 
+                    detail: { ...noteInfo}
+                }));
             }
         });
 
         document.addEventListener('mouseup', () => {
-            this.activeKeys.forEach(note => this.stopNote(note));
-            this.activeKeys.clear();
-        });
+            const activeKeys = this.container.querySelectorAll('.key.active');
+            activeKeys.forEach(key => key.classList.remove('active'));
 
-        // Keyboard events
-        document.addEventListener('keydown', (e) => {
-            if (!e.repeat && this.keyMap[e.key] !== undefined) {
-                const note = this.keyMap[e.key];
-                this.playNote(note);
-            }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            if (this.keyMap[e.key] !== undefined) {
-                const note = this.keyMap[e.key];
-                this.stopNote(note);
-            }
+            this.audioPlayer.stopAll();
+            this.dispatchEvent(new CustomEvent('noteoff'));
         });
     }
 
-    playNote(note) {
-        this.activeKeys.add(note);
-        this.audioPlayer.playNote(note);
+    setNoteActive(note, active) {
         const key = this.container.querySelector(`[data-note="${note}"]`);
-        if (key) key.classList.add('active');
+        if (key) {
+            if (active) {
+                key.classList.add('active');
+            } else {
+                key.classList.remove('active');
+            }
+        }
     }
+}
 
-    stopNote(note) {
-        this.activeKeys.delete(note);
-        this.audioPlayer.stopNote(note);
-        const key = this.container.querySelector(`[data-note="${note}"]`);
-        if (key) key.classList.remove('active');
+class AccessibilityMIDIKeyboard {
+    constructor(){
+        this.heldNotes = []
+    }
+    init(midiInput){
+        // Set up event listeners
+        midiInput.addEventListener('noteon', (e) => {
+            const { note, noteName, fullNoteName, velocity } = e.detail;
+
+        });
+
+        midiInput.addEventListener('noteoff', (e) => {
+            const { note, noteName, fullNoteName } = e.detail;
+
+        });
     }
 }
 
@@ -225,12 +265,24 @@ const audioPlayer = new AudioPlayer();
 const midiInput = new MIDIInput(audioPlayer);
 const piano = new PianoKeyboard('pianoContainer', audioPlayer);
 
-// Set up MIDI connection button
+// Set up event listeners
+midiInput.addEventListener('noteon', (e) => {
+    const { note, noteName, fullNoteName, velocity } = e.detail;
+    console.log(`Note On: ${fullNoteName} (${note}) velocity: ${velocity}`);
+    piano.setNoteActive(note, true);
+});
+
+midiInput.addEventListener('noteoff', (e) => {
+    const { note, noteName, fullNoteName } = e.detail;
+    console.log(`Note Off: ${fullNoteName} (${note})`);
+    piano.setNoteActive(note, false);
+});
+
+// Connect UI controls
 document.getElementById('midiConnectBtn').addEventListener('click', () => {
     midiInput.init();
 });
 
-// Connect UI controls
 document.getElementById('waveform').addEventListener('change', (e) => {
     audioPlayer.setWaveform(e.target.value);
 });
@@ -238,14 +290,3 @@ document.getElementById('waveform').addEventListener('change', (e) => {
 document.getElementById('volume').addEventListener('input', (e) => {
     audioPlayer.setVolume(e.target.value / 100);
 });
-
-// Connect MIDI visual feedback
-midiInput.onNoteOn = (note) => {
-    const key = document.querySelector(`[data-note="${note}"]`);
-    if (key) key.classList.add('active');
-};
-
-midiInput.onNoteOff = (note) => {
-    const key = document.querySelector(`[data-note="${note}"]`);
-    if (key) key.classList.remove('active');
-};
