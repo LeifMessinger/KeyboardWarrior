@@ -345,7 +345,7 @@ class Game{
     constructor(canvas){
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
-        this.ghostNotes = []
+        this.notes = []
         this.ghostNotes = []
         this.start = 0;
         this.end =  1;
@@ -408,7 +408,7 @@ class Game{
     }
 
     //you gotta set the this.canvasContext.fillStyle before calling this
-    drawNotes(notes){
+    drawNotes(notes, shake = 5.0){
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
@@ -418,7 +418,7 @@ class Game{
             const xStart = this.invLerp(note.startTime, this.start, this.end)
             const xEnd = this.invLerp(note.endTime, this.start, this.end)
 
-            const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*5*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
+            const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
@@ -443,6 +443,9 @@ class Game{
 
         this.canvasContext.fillStyle = "blue";
         this.drawNotes(this.ghostNotes)
+        
+        this.canvasContext.fillStyle = this.darkMode? "white" : "black";
+        this.drawNotes(this.notes)
         
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
