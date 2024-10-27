@@ -256,18 +256,20 @@ class PianoKeyboard {
 
 class AccessibilityMIDIKeyboard {
     constructor(){
-        this.heldNotes = []
+        this.heldNotes = {}
     }
-    init(midiInput){
+    init(midiInput, callback, timeout = .5){
         // Set up event listeners
         midiInput.addEventListener('noteon', (e) => {
             const { note, noteName, fullNoteName, velocity } = e.detail;
-
+            this.heldNotes[note] = (setTimeout(()=>{
+                callback(e.detail);
+            }, timeout * 1000.0));
         });
 
         midiInput.addEventListener('noteoff', (e) => {
             const { note, noteName, fullNoteName } = e.detail;
-
+            clearTimeout(this.heldNotes[note])
         });
     }
 }
@@ -662,6 +664,11 @@ document.getElementById('volume').addEventListener('input', (e) => {
 var editor = ace.edit("editor", {fontSize: "20pt"});
 editor.setTheme("ace/theme/monokai");
 //editor.session.setMode("ace/mode/javascript");
+
+const ally = new AccessibilityMIDIKeyboard();
+ally.init(midiInput, ({ note, noteName, fullNoteName, velocity }) =>{
+    editor.session.insert(editor.getCursorPosition(), noteName + "\n");
+});
 
 const songList = {
     "Heart and Soul": "octave 4\r\nstep 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\noctave 3\r\nB\r\nrest\r\nA\r\nB\r\noctave 4\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nstep 3/4\r\nG\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nA\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nD\r\nstep 5/8\r\nC\r\n\r\noctave 3\r\nstep 1/8\r\nB\r\nstep 1/4\r\nA\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB",
