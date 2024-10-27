@@ -422,7 +422,7 @@ class Game{
             const xStart = invLerp(note.startTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
 
-            const rect = [uvX(xStart), uvY(y) + 10*Math.sin(note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
+            const rect = [uvX(xStart), uvY(y) + 10*Math.sin(1.5*note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
