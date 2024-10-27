@@ -547,7 +547,38 @@ class Game{
 
     draw(){
         if(this.playing){
-            return this.drawAnimation();
+            this.drawAnimation();
+            
+            if(((Date.now() - this.startTime) / 1000.0) * (this.bpm/120.0) >= this.end){
+                if(this.ghostNotes.every(
+                    (ghostNote) => {
+                        //Every ghost note should have some real note that hits it
+                        return this.notes.some((realNote)=>{
+                            return ghostNote.noteValue == realNote.noteValue && (Math.abs(realNote.startTime - ghostNote.startTime) < .001)
+                        });
+                })){   //The game has ended
+                    //You win?
+                    this.canvasContext.fillStyle = "yellow";
+                    this.canvasContext.textAlign = "center";
+                    this.canvasContext.font = parseInt(this.canvas.height * .2) + "px Arial";
+                    this.canvasContext.fillText("You Win!", ...[this.canvas.width / 2.0, this.canvas.height / 2.0]);
+                }else{
+                    const correctNotes = this.ghostNotes.reduce(
+                        (acc, ghostNote) => {
+                            //Every ghost note should have some real note that hits it
+                            return this.notes.some((realNote)=>{
+                                return (ghostNote.noteValue == realNote.noteValue) && (Math.abs(realNote.startTime - ghostNote.startTime) < .001)
+                            })? (1 + acc) : acc;
+                    }, 0);
+                    //You lose?
+                    this.canvasContext.fillStyle = "#FF4433";
+                    this.canvasContext.textAlign = "center";
+                    this.canvasContext.font = parseInt(this.canvas.height * .2) + "px Arial";
+                    this.canvasContext.fillText(correctNotes+"/"+this.ghostNotes.length, ...[this.canvas.width / 2.0, this.canvas.height / 2.0]);
+                }
+            }
+
+            return;
         }
         if((this.end == 0) ||
             (!this.highestNote) ||
