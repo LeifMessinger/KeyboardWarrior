@@ -345,33 +345,40 @@ class Game{
     constructor(canvas){
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
+        this.ghostNotes = []
         this.notes = []
         this.start = 0;
         this.end =  1;
-        this.highestNote = undefined;
-        this.lowestNote = undefined;
-        this.highestNoteLetter = 'C';
-        this.lowestNoteLetter = 'C';
         this.darkMode = false;
+
+        this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
     }
 
-    setNotes(notes){
-        this.notes = notes ?? this.notes
-        this.end = Math.max.apply(undefined, notes.map((note)=>note.endTime))
-        if(notes.length > 0){
-            const maxNote = notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
-            const minNote = notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+    calculateRanges(){
+        this.end = Math.max.apply(undefined, this.notes.map((note)=>note.endTime))
+        if(this.notes.length > 0){
+            const maxNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
+            const minNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
             
             this.highestNote = maxNote.noteValue ?? 0;
             this.lowestNote = minNote.noteValue ?? 0;
             this.highestNoteLetter = maxNote.noteLetter;
             this.lowestNoteLetter = minNote.noteLetter;
-
+        }else{
+            this.highestNote = undefined;
+            this.lowestNote = undefined;
+            this.highestNoteLetter = 'C';
+            this.lowestNoteLetter = 'C';
         }
 
         if(isNaN(this.end)){
             console.warn("end is NaN. Parsing the script probably failed and put NaN for note.endTime")
         }
+    }
+
+    setNotes(notes){
+        this.notes = notes ?? this.notes
+        this.calculateRanges();
     }
 
     run(){
@@ -416,8 +423,8 @@ class Game{
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
-        const horPixelSize = (this.canvas.width / 1080.0);
-        const vertPixelSize = (this.canvas.height / 500.0);
+        const horPixelSize = (this.canvas.width / this.canvas.clientWidth);
+        const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
 
         this.canvasContext.fillStyle = "blue";
         for(let note of this.notes){
@@ -425,7 +432,7 @@ class Game{
             const xStart = invLerp(note.startTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
 
-            const rect = [uvX(xStart), uvY(y) + 10*Math.sin(1.5*note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
+            const rect = [uvX(xStart), uvY(y) + (this.canvas.height / 500.0)*5*Math.sin(1.5*note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
@@ -459,7 +466,7 @@ class Game{
             const lineEnd = [uvX(x), uvY(1.0)];
             this.canvasContext.lineTo(...lineEnd); // Draw a line to (150, 100)
             
-            this.canvasContext.lineWidth = ((i % 4 == 0)? 2 : 1) * horPixelSize;
+            this.canvasContext.lineWidth = ((i % 4 == 0)? 2 : 1) * horPixelSize * .70;
             this.canvasContext.stroke(); // Render the path
         }
         
