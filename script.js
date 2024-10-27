@@ -464,7 +464,11 @@ class Game{
             this.lowestNoteLetter = minNote.noteLetter;
         }
 
-        this.end = Math.max.apply(undefined, this.ghostNotes.map((note)=>note.endTime), this.notes.map((note)=>note.endTime))
+        this.end = Math.max(
+            ...this.ghostNotes.filter(note => note.endTime > 0).map(note => note.endTime),
+            ...this.notes.filter(note => note.endTime > 0).map(note => note.endTime),
+            0 // This ensures that Math.max has at least one argument
+        );        
         if(this.ghostNotes.length > 0 && this.notes.length > 0){
             const {maxNote: maxGhostNote, minNote: minGhostNote} = calculate(this.ghostNotes);
             const {maxNote: maxRealNote, minNote: minRealNote} = calculate(this.notes);
