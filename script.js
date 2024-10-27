@@ -274,69 +274,137 @@ class AccessibilityMIDIKeyboard {
     }
 }
 
+function preprocessMusicScript(input) {
+    // Remove comments
+    let lines = input.split('\n').map(line => {
+        const commentIndex = line.indexOf('//');
+        return commentIndex >= 0 ? line.substring(0, commentIndex).trim() : line.trim();
+    }).filter(line => line !== '');
+
+    // Process labels and repeats
+    let expandedLines = [];
+    let labels = {};
+    
+    // First pass: collect labels
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.endsWith(':')) {
+            labels[line.slice(0, -1)] = i;
+        }
+    }
+
+    // Second pass: process lines and handle repeats
+    let i = 0;
+    while (i < lines.length) {
+        const line = lines[i];
+        
+        if (line.startsWith('repeat')) {
+            const parts = line.split(' ');
+            if (parts.length < 2) {
+                i++;
+                continue;
+            }
+
+            let labelName, repeatCount;
+            if (parts.length === 2) {
+                // repeat label
+                labelName = parts[1];
+                repeatCount = 1;
+            } else {
+                // repeat label N
+                labelName = parts[1];
+                repeatCount = parseInt(parts[2]) || 1;
+            }
+
+            if (labelName in labels) {
+                const labelIndex = labels[labelName];
+                const sectionToRepeat = lines.slice(labelIndex + 1, i);
+                
+                // Add the section N times at current position
+                for (let j = 0; j < repeatCount; j++) {
+                    expandedLines.push(...sectionToRepeat);
+                }
+            }
+            i++;
+            continue;
+        } else if (!line.endsWith(':')) { // Skip label definitions
+            expandedLines.push(line);
+        }
+        i++;
+    }
+
+    return expandedLines;
+}
+
 function parseMusicScript(input) {
     let notes = [];
     let octave = 0;
     let stepDuration = .25;
     let currentTime = 0;
 
-    try{
-        const lines = input.split('\n');
+    try {
+        const lines = preprocessMusicScript(input);
 
         lines.forEach(line => {
             if (line.startsWith('octave')) {
-                if(!(line.includes(" "))) return;
+                if (!(line.includes(" "))) return;
                 octave = parseInt(line.split(" ")[1])
             } else if (line.startsWith('step')) {
-                if(!(line.includes(" "))) return;
-                if(line.includes('/')){
+                if (!(line.includes(" "))) return;
+                if (line.includes('/')) {
                     const stepParts = line.split(' ');
                     const stepFraction = stepParts[1]?.split('/');
                     stepDuration = 1 / (parseFloat(stepFraction[1]) / parseFloat(stepFraction[0]));
-                }else{
+                } else {
                     const old = stepDuration
                     stepDuration = parseFloat(line.split(' ')[1])
-                    if(isNaN(stepDuration)) stepDuration = old
+                    if (isNaN(stepDuration)) stepDuration = old
                 }
             } else if (line.trim() !== '') {
                 if (line.trim() === 'rest') {
                     currentTime += stepDuration;
                 } else {
                     const octaveStructure = [
-                        //Ocatve 0
+                        //Octave 0
                         { note: 60, black: false, key: "C" }, // C
-                        { note: 61, black: true , key:"C#" }, // C#
-                        { note: 62, black: false, key:"D" }, // D
-                        { note: 63, black: true , key:"D#" }, // D#
-                        { note: 64, black: false, key:"E" }, // E
-                        { note: 65, black: false, key:"F" }, // F
-                        { note: 66, black: true , key:"F#" }, // F#
-                        { note: 67, black: false, key:"G" }, // G
-                        { note: 68, black: true , key:"G#" }, // G#
-                        { note: 69, black: false, key:"A" }, // A
-                        { note: 70, black: true , key:"A#" }, // A#
-                        { note: 71, black: false, key:"B" },  // B
+                        { note: 61, black: true, key: "C#" }, // C#
+                        { note: 62, black: false, key: "D" }, // D
+                        { note: 63, black: true, key: "D#" }, // D#
+                        { note: 64, black: false, key: "E" }, // E
+                        { note: 65, black: false, key: "F" }, // F
+                        { note: 66, black: true, key: "F#" }, // F#
+                        { note: 67, black: false, key: "G" }, // G
+                        { note: 68, black: true, key: "G#" }, // G#
+                        { note: 69, black: false, key: "A" }, // A
+                        { note: 70, black: true, key: "A#" }, // A#
+                        { note: 71, black: false, key: "B" },  // B
                     ];
 
-                    const noteLetter = line.trim();
-                    const note = octaveStructure.find(n => n.key.toUpperCase() === noteLetter.toUpperCase());
-                    if(!note){
-                        console.error("Note not found:", noteValue);
-                        throw "shit";
-                    }
-                    const noteValue = (note?.note) + ((octave - 4) * 12);
+                    // Process each note on the line
+                    const noteLetters = line.split(' ').filter(n => n);
+                    let isFirstNote = true;
+                    
+                    noteLetters.forEach(noteLetter => {
+                        const note = octaveStructure.find(n => n.key.toUpperCase() === noteLetter.toUpperCase());
+                        if (!note) {
+                            console.error("Note not found:", noteLetter);
+                            throw "Note not found: " + noteLetter;
+                        }
+                        const noteValue = (note?.note) + ((octave - 4) * 12);
 
-                    notes.push({
-                        noteValue,
-                        noteLetter,
-                        startTime: currentTime,
-                        endTime: currentTime + stepDuration
+                        notes.push({
+                            noteValue,
+                            noteLetter,
+                            startTime: currentTime,
+                            endTime: currentTime + stepDuration
+                        });
                     });
+                    
                     currentTime += stepDuration;
                 }
             }
         });
-    }catch(e){
+    } catch (e) {
         console.warn(e)
         return []
     }
@@ -777,8 +845,8 @@ function autorun() {
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
 
                 // Change this if you don't want the text to be pasted when you switch songs.
-                editor.setValue("");
-                //editor.setValue(songList[song]);
+                //editor.setValue("");
+                editor.setValue(songList[song]);
             };
             tab.appendChild(button)
             elm.appendChild(tab);
