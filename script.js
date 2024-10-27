@@ -624,9 +624,9 @@ class Game{
                 );
             }
             
-            this.canvasContext.beginPath();
+            /*this.canvasContext.beginPath();
             this.canvasContext.arc(rect[0], rect[1], 50, 0, 2 * Math.PI);
-            this.canvasContext.stroke();
+            this.canvasContext.stroke();*/
         }
     }
 
@@ -634,7 +634,6 @@ class Game{
         if(this.notes.length < 1) return;
         this.shuffleMonsters();
         this.startTime = Date.now()
-        console.log("startTimeSet", this.startTime);
         this.playing = true;
         //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
         this.notesQueued = []
