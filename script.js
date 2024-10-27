@@ -346,6 +346,7 @@ class Game{
         this.audioPlayer = new AudioPlayer();
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
+        this.monsters = Array.from("👹👺👻💀👽👾🤖👿😈🧛🧟🧙🕷️🦇").filter((str)=>str.length > 1)
         this.notes = []
         this.ghostNotes = []
         this.notesQueued = []
@@ -353,9 +354,18 @@ class Game{
         this.end =  1;
         this.darkMode = false;
         this.playing = false;
-        this.bpm = 120.0
+        this.bpm = 120.0;
+        this.sword = document.getElementById("sword");
 
         this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
+    }
+
+    shuffleMonsters(){
+        //this doesn't work
+        this.monsters = this.monsters
+            .map(value => ({ value, sort: Math.random() }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value)
     }
 
     calculateRanges(){
@@ -531,28 +541,58 @@ class Game{
         this.canvasContext.globalCompositeOperation = "source-over";
     }
 
-    drawAnimation(){
+    //Draw gouls
+    drawAnimation(shake = 5.0){
+        //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
+        const noteRange = this.highestNote - this.lowestNote;
+        const noteHeight = 1.0/(noteRange + 1);
 
+        for(let note of this.notes){
+            const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
+            const xStart = this.invLerp(note.startTime, this.start, this.end)
+            const xEnd = this.invLerp(note.endTime, this.start, this.end)
+
+            const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
+            this.canvasContext.beginPath(); // Start a new path
+            const fontSize = 20;
+            const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
+            this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px Arial";
+            
+            function wrapIndex(index, length) {
+                return ((index % length) + length) % length;
+            }
+
+            this.canvasContext.fillText(this.monsters[wrapIndex(note.noteValue, this.monsters.length)], rect[0], rect[1]);
+        }
     }
 
     play(){
         if(this.notes.length < 1) return;
+        this.shuffleMonsters();
         this.playing = true;
         //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
         this.notesQueued = []
+        this.sword.swing = true;
         for(let note of this.notes){
             this.notesQueued.push(setTimeout(()=>{
                 this.audioPlayer.playNote(note.noteValue)
+
+                this.sword.swing = !(this.sword.swing);
+                console.log(this.sword.swing)
+                //this.sword.style.setProperty("scale", this.sword.swing? "1.0 -1.0" : "");
+                this.sword.style.setProperty("transform", this.sword.swing? "rotate(80deg)" : "rotate(-80deg)");
             }, note.startTime * 1000 * (120.0/this.bpm)));
             //This might silence the user's notes, but better that notes get silenced then notes get sustained forever.
             setTimeout(()=>{
                 this.audioPlayer.stopNote(note.noteValue)
             }, note.endTime * 1000 * (120.0/this.bpm));
         }
+        this.sword.style.setProperty("display", "block");
     }
 
     stop(){
         this.playing = false;
+        this.sword.style.setProperty("display", "none");
 
         for(let note of this.notesQueued){
             clearTimeout(note);
@@ -639,7 +679,6 @@ function autorun() {
         session.on('change', updateNotes);
 
         canvas.addEventListener('click', ()=>{
-            console.log("bruh")
             game.playStop();
         });
         

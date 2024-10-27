@@ -1,1 +1,1 @@
-Clone it and open the html, bro.
+Clone it (with `--recurse-submodules`) and open the html, bro.
