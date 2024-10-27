@@ -562,13 +562,13 @@ class Game{
 
         let salt = 0;
         for(let note of this.ghostNotes){
-            const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
+            let y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const runUpSpeed = 5.0;
             let xStart = (this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
             const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end)
 
             this.canvasContext.beginPath(); // Start a new path
-            const fontSize = 40;
+            let fontSize = 40;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
             this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px serif";
             
@@ -582,9 +582,24 @@ class Game{
             function absBounce(x, floor){
                 return Math.abs(x - floor) + floor;
             }
-            
-            const swordDistance = 0.0005;
-            xStart = absBounce(xStart, swordDistance);
+
+            const noteHit = this.notes.some(({
+                noteValue,
+                noteLetter,
+                startTime,
+                endTime,
+            }) => {
+                return noteValue == note.noteValue && (Math.abs(note.startTime - startTime) < .001)
+            });
+            if(noteHit){
+                const swordDistance = 0.0005;
+                if(xStart < swordDistance){
+                    xStart = absBounce(xStart, swordDistance);
+                    y += xStart * xStart;
+                }else{
+                    fontSize = 80;
+                }
+            }
             
             const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.fillText(monster, rect[0], rect[1]);
