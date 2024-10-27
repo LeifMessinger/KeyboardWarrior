@@ -1,0 +1,34 @@
+# _config.yml
+title: "Static Site"
+description: "Nothing to build here"
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "" # the base hostname & protocol for your site
+
+# Exclude all files and directories
+exclude:
+  - "*"
+
+# Prevent Jekyll from processing any files
+keep_files: []
+
+# Set an empty collection
+collections: {}
+
+# Disable plugins
+plugins: []
+
+# Set an empty theme
+theme: ""
+
+# Disable all output formats
+markdown: kramdown
+kramdown:
+  input: GFM
+  output: ""
+
+# Disable all layouts
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: null
