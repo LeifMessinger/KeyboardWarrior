@@ -275,9 +275,8 @@ class AccessibilityMIDIKeyboard {
 function parseMusicScript(input) {
     let notes = [];
     let octave = 0;
-    let step = .25;
+    let stepDuration = .25;
     let currentTime = 0;
-    let stepDuration = 0;
 
     try{
         const lines = input.split('\n');
@@ -291,9 +290,11 @@ function parseMusicScript(input) {
                 if(line.includes('/')){
                     const stepParts = line.split(' ');
                     const stepFraction = stepParts[1]?.split('/');
-                    stepDuration = 1 / (parseInt(stepFraction[1]) / parseInt(stepFraction[0]));
+                    stepDuration = 1 / (parseFloat(stepFraction[1]) / parseFloat(stepFraction[0]));
                 }else{
-                    stepDuration = parseInt(line.split(' '))
+                    const old = stepDuration
+                    stepDuration = parseFloat(line.split(' ')[1])
+                    if(isNaN(stepDuration)) stepDuration = old
                 }
             } else if (line.trim() !== '') {
                 if (line.trim() === 'rest') {
@@ -355,7 +356,11 @@ class Game{
         this.notes = notes ?? this.notes
         this.end = Math.max.apply(undefined, notes.map((note)=>note.endTime))
         this.highestNote = Math.max.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
-        this.lowestNote = Math.max.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
+        this.lowestNote = Math.min.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
+
+        if(isNaN(this.end)){
+            console.warn("end is NaN. Parsing the script probably failed and put NaN for note.endTime")
+        }
     }
 
     draw(){
@@ -364,6 +369,8 @@ class Game{
             (!this.lowestNote)){
                 return;
         }
+
+        debugger
 
         //Draw background
         this.canvasContext.fillStyle = "magenta";
@@ -381,11 +388,11 @@ class Game{
         }
         //returns a fraction
         function invLerp(x, a, b){
-            return (x - a) / (a - b)
+            return (x - a) / (b - a)
         }
 
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
-        const noteHeight = 1.0/(this.notes.highestNote - this.notes.lowestNote);
+        const noteHeight = 1.0/(this.highestNote - this.lowestNote);
 
         this.canvasContext.fillStyle = "blue";
         for(let note of this.notes){
@@ -393,8 +400,9 @@ class Game{
             const xStart = invLerp(note.endTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
 
+            const rect = [uvX(xStart), uvY(y), uvX(xEnd), uvY(y + noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
-            this.canvasContext.fillRect(uvX(xStart), uvY(y), uvX(xEnd), uvY(y + noteHeight)); // Add a rectangle to the current path
+            this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
     }
 }
@@ -472,7 +480,8 @@ function autorun() {
         updateNotes();
         session.on('change', updateNotes);
         
-        window.requestAnimationFrame(()=>{game.draw()});
+        game.draw()
+        //window.requestAnimationFrame(()=>{game.draw()});
     }
 }
 if (document.addEventListener)
