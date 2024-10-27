@@ -356,9 +356,29 @@ class Game{
 
     calculateRanges(){
         this.end = Math.max.apply(undefined, this.ghostNotes.map((note)=>note.endTime))
-        if(this.ghostNotes.length > 0){
-            const maxNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
+        if(this.ghostNotes.length > 0 && this.notes.length > 0){
+            const maxGhostNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
+            const minGhostNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            const maxRealNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
+            const minRealNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            const maxNote = (maxGhostNote.noteValue > maxGhostNote.noteValue)? maxGhostNote : maxRealNote;
+            const minNote = (minGhostNote.noteValue < minGhostNote.noteValue)? minGhostNote : minRealNote;
+            
+            this.highestNote = maxNote.noteValue ?? 0;
+            this.lowestNote = minNote.noteValue ?? 0;
+            this.highestNoteLetter = maxNote.noteLetter;
+            this.lowestNoteLetter = minNote.noteLetter;
+        } else if(this.ghostNotes.length > 0){
+            const maxNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
             const minNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            
+            this.highestNote = maxNote.noteValue ?? 0;
+            this.lowestNote = minNote.noteValue ?? 0;
+            this.highestNoteLetter = maxNote.noteLetter;
+            this.lowestNoteLetter = minNote.noteLetter;
+        }else if(this.notes.length > 0){
+            const maxNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
+            const minNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
             
             this.highestNote = maxNote.noteValue ?? 0;
             this.lowestNote = minNote.noteValue ?? 0;
@@ -377,12 +397,12 @@ class Game{
     }
 
     setGhostNotes(ghostNotes){
-        this.ghostNotes = ghostNotes ?? this.ghostNotes
+        this.ghostNotes = ghostNotes ?? [];
         this.calculateRanges();
     }
 
     setNotes(notes){
-        this.notes = notes ?? this.notes
+        this.notes = notes ?? this.notes;
         this.calculateRanges();
     }
 
@@ -589,6 +609,7 @@ function autorun() {
             button.textContent = song;
             button.onclick = ()=>{
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
+                editor.setValue("");
             };
             tab.appendChild(button)
             elm.appendChild(tab);
@@ -596,7 +617,7 @@ function autorun() {
         const firstSongText = Object.values(songList)[0];
         if(firstSongText){
             editor.setValue(firstSongText, -1);
-            game.setGhostNotes(parseMusicScript(firstSongText), -1) // moves cursor to the start
+            game.setGhostNotes(parseMusicScript(firstSongText)) // moves cursor to the start
         }
     }
 }
