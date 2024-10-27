@@ -11,6 +11,11 @@ textarea {
     flex: .5 1;
     height: 100%;
 }
+.head {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
 .editorWrapper {
     position: relative;
     flex: .5 1;
@@ -94,6 +99,23 @@ select, input {
     margin-top: 10px;
     font-style: italic;
 }
+
 details {
     display: inline;
+}
+details summary::marker {
+    content: '>'; /* Down-pointing */
+    font-weight: bold;
+}
+details[open] summary::marker {
+    content: '\25BC'; /* Down-pointing triangle */
+}
+details[open] summary::before {
+    content: ''; /* Down-pointing */
+    font-weight: bold;
+}
+summary {
+    user-select: none;
+    pointer-events: all;
+    cursor: pointer;
 }

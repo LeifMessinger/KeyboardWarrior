@@ -445,7 +445,7 @@ class Game{
         this.drawNotes(this.ghostNotes)
         
         this.canvasContext.fillStyle = this.darkMode? "white" : "black";
-        this.drawNotes(this.notes)
+        this.drawNotes(this.notes, 0)
         
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
@@ -552,24 +552,6 @@ const songList = {
 
 
 function autorun() {
-    const elm = document.getElementById("songList");
-    if(elm){
-        for(let song of Object.keys(songList)){
-            let tab = document.createElement("td");
-            let button = document.createElement("button");
-            button.textContent = song;
-            button.onclick = ()=>{
-                editor.setValue(songList[song], -1) // moves cursor to the start
-            };
-            tab.appendChild(button)
-            elm.appendChild(tab);
-        }
-        const firstSongText = Object.values(songList)[0];
-        if(firstSongText){
-            editor.setValue(firstSongText, -1);
-        }
-    }
-
     const canvas = document.getElementById("roll");
     const game = new Game(canvas);
     if(canvas){
@@ -591,12 +573,31 @@ function autorun() {
             const editorValue = editor.getValue();
             //console.log(editorValue)
             const notes = parseMusicScript(editorValue);
-            game.setGhostNotes(notes);
+            game.setNotes(notes);
         }
         updateNotes();
         session.on('change', updateNotes);
         
         game.run()
+    }
+    
+    const elm = document.getElementById("songList");
+    if(elm){
+        for(let song of Object.keys(songList)){
+            let tab = document.createElement("td");
+            let button = document.createElement("button");
+            button.textContent = song;
+            button.onclick = ()=>{
+                game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
+            };
+            tab.appendChild(button)
+            elm.appendChild(tab);
+        }
+        const firstSongText = Object.values(songList)[0];
+        if(firstSongText){
+            editor.setValue(firstSongText, -1);
+            game.setGhostNotes(parseMusicScript(firstSongText), -1) // moves cursor to the start
+        }
     }
 }
 if (document.addEventListener)
