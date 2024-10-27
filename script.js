@@ -360,10 +360,20 @@ class Game{
         this.bpm = 120.0;
         this.startDelay = .5;
         this.sword = document.getElementById("sword");
+        this.monsterImages = {};
+        this.loadMonsterImages();
 
         this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
+    
     }
 
+    loadMonsterImages() {
+        this.monsters.forEach(monsterId => {
+            const img = new Image();
+            img.src = `./twemoji/assets/svg/${monsterId}.svg`;
+            this.monsterImages[monsterId] = img;
+        });
+    }
     shuffleMonsters(){
         //this doesn't work
         //this.monsters = this.monsters
@@ -580,9 +590,6 @@ class Game{
                 return ((index % length) + length) % length;
             }
 
-            //console.log(this.monsters, this.monsters[wrapIndex(note.noteValue, this.monsters.length)], wrapIndex(note.noteValue, this.monsters.length))
-            const monster = String.fromCodePoint(parseInt(this.monsters[wrapIndex(note.noteValue + (salt++ * 3), this.monsters.length)], 16));
-
             function absBounce(x, floor){
                 return Math.abs(x - floor) + floor;
             }
@@ -606,10 +613,15 @@ class Game{
             }
             
             const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
-            if(rect[0] <= this.uvX(1.1)){
-                this.canvasContext.beginPath(); // Start a new path
-                this.canvasContext.fillText(monster, rect[0], rect[1]);
-                this.canvasContext.fillText(monster, rect[0], rect[1]);
+            const monsterImg = this.monsterImages[this.monsters[wrapIndex(note.noteValue + (salt++ * 3), this.monsters.length)]];
+            if(rect[0] <= this.uvX(1.1) && monsterImg) {
+                this.canvasContext.drawImage(
+                    monsterImg,
+                    rect[0] - 72/2,  // center the image horizontally
+                    rect[1] - 72/2,  // center the image vertically
+                    72,
+                    72
+                );
             }
             
             this.canvasContext.beginPath();
