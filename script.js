@@ -355,12 +355,17 @@ class Game{
     }
 
     calculateRanges(){
+        const calculate = (notes) => {
+            const maxNote = notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
+            const minNote = notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            
+            return {minNote, maxNote};
+        }
+
         this.end = Math.max.apply(undefined, this.ghostNotes.map((note)=>note.endTime))
         if(this.ghostNotes.length > 0 && this.notes.length > 0){
-            const maxGhostNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
-            const minGhostNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
-            const maxRealNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
-            const minRealNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            const {maxGhostNote, minGhostNote} = calculate(this.ghostNotes);
+            const {maxRealNote, minRealNote} = calculate(this.notes);
             const maxNote = (maxGhostNote.noteValue > maxGhostNote.noteValue)? maxGhostNote : maxRealNote;
             const minNote = (minGhostNote.noteValue < minGhostNote.noteValue)? minGhostNote : minRealNote;
             
@@ -369,16 +374,14 @@ class Game{
             this.highestNoteLetter = maxNote.noteLetter;
             this.lowestNoteLetter = minNote.noteLetter;
         } else if(this.ghostNotes.length > 0){
-            const maxNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
-            const minNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            const {maxNote, minNote} = calculate(this.ghostNotes);
             
             this.highestNote = maxNote.noteValue ?? 0;
             this.lowestNote = minNote.noteValue ?? 0;
             this.highestNoteLetter = maxNote.noteLetter;
             this.lowestNoteLetter = minNote.noteLetter;
         }else if(this.notes.length > 0){
-            const maxNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current);
-            const minNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            const {maxNote, minNote} = calculate(this.notes);
             
             this.highestNote = maxNote.noteValue ?? 0;
             this.lowestNote = minNote.noteValue ?? 0;
