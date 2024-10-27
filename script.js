@@ -346,7 +346,7 @@ class Game{
         this.audioPlayer = new AudioPlayer();
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
-        this.monsters = ["1f479", "1f47a", "1f47b", "1f480", "1f47d", "1f47e", "1f916", "1f47f", "1f608", "1f9db", "1f9df", "1f9d9", "1f577", "1f987"]; //Array.from("👹👺👻💀👽👾🤖👿😈🧛🧟🧙🕷️🦇").filter((str)=>str.length > 1)
+        this.monsters = ["1f479", "1f47a", "1f47b", "1f480", "1f47d", "1f916", "1f47f", "1f608", "1f9db", "1f9df", "1f9d9", "1f577", "1f987"]; //Array.from("👹👺👻💀👽🤖👿😈🧛🧟🧙🕷️🦇").filter((str)=>str.length > 1)
         this.notes = []
         this.ghostNotes = []
         this.notesQueued = []
@@ -555,12 +555,13 @@ class Game{
         const noteHeight = 1.0/(noteRange + 1);
 
         let salt = 0;
-        for(let note of this.notes){
+        for(let note of this.ghostNotes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
-            const xStart = this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)
+            const runUpSpeed = 5.0;
+            const xStart = (this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
             const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end)
 
-            const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
+            const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             const fontSize = 25;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
