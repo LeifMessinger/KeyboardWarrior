@@ -346,7 +346,7 @@ class Game{
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
         this.ghostNotes = []
-        this.notes = []
+        this.ghostNotes = []
         this.start = 0;
         this.end =  1;
         this.darkMode = false;
@@ -355,10 +355,10 @@ class Game{
     }
 
     calculateRanges(){
-        this.end = Math.max.apply(undefined, this.notes.map((note)=>note.endTime))
-        if(this.notes.length > 0){
-            const maxNote = this.notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
-            const minNote = this.notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+        this.end = Math.max.apply(undefined, this.ghostNotes.map((note)=>note.endTime))
+        if(this.ghostNotes.length > 0){
+            const maxNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
+            const minNote = this.ghostNotes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
             
             this.highestNote = maxNote.noteValue ?? 0;
             this.lowestNote = minNote.noteValue ?? 0;
@@ -374,6 +374,11 @@ class Game{
         if(isNaN(this.end)){
             console.warn("end is NaN. Parsing the script probably failed and put NaN for note.endTime")
         }
+    }
+
+    setGhostNotes(ghostNotes){
+        this.ghostNotes = ghostNotes ?? this.ghostNotes
+        this.calculateRanges();
     }
 
     setNotes(notes){
@@ -427,7 +432,7 @@ class Game{
         const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
 
         this.canvasContext.fillStyle = "blue";
-        for(let note of this.notes){
+        for(let note of this.ghostNotes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const xStart = invLerp(note.startTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
@@ -576,7 +581,7 @@ function autorun() {
             const editorValue = editor.getValue();
             //console.log(editorValue)
             const notes = parseMusicScript(editorValue);
-            game.setNotes(notes);
+            game.setGhostNotes(notes);
         }
         updateNotes();
         session.on('change', updateNotes);
