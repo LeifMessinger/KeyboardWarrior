@@ -322,7 +322,7 @@ function parseMusicScript(input) {
                         console.error("Note not found:", noteValue);
                         throw "shit";
                     }
-                    const noteValue = note?.note;
+                    const noteValue = (note?.note) + (octave * 12);
 
                     notes.push({
                         noteValue,
@@ -369,9 +369,7 @@ class Game{
             (!this.lowestNote)){
                 return;
         }
-
-        debugger
-
+        
         //Draw background
         this.canvasContext.fillStyle = "magenta";
         this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -397,10 +395,10 @@ class Game{
         this.canvasContext.fillStyle = "blue";
         for(let note of this.notes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
-            const xStart = invLerp(note.endTime, this.start, this.end)
+            const xStart = invLerp(note.startTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
 
-            const rect = [uvX(xStart), uvY(y), uvX(xEnd), uvY(y + noteHeight)];
+            const rect = [uvX(xStart), uvY(y), uvX(xEnd - xStart), uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
