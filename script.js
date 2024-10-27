@@ -564,10 +564,9 @@ class Game{
         for(let note of this.ghostNotes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const runUpSpeed = 5.0;
-            const xStart = (this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
+            let xStart = (this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
             const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end)
 
-            const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             const fontSize = 40;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
@@ -579,6 +578,15 @@ class Game{
 
             //console.log(this.monsters, this.monsters[wrapIndex(note.noteValue, this.monsters.length)], wrapIndex(note.noteValue, this.monsters.length))
             const monster = String.fromCodePoint(parseInt(this.monsters[wrapIndex(note.noteValue + (salt++) * 13, this.monsters.length)], 16));
+
+            function absBounce(x, floor){
+                return Math.abs(x - floor) + floor;
+            }
+            
+            const swordDistance = 0.0005;
+            xStart = absBounce(xStart, swordDistance);
+            
+            const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.fillText(monster, rect[0], rect[1]);
         }
     }
