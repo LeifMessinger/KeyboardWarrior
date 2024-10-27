@@ -366,10 +366,10 @@ class Game{
 
     shuffleMonsters(){
         //this doesn't work
-        this.monsters = this.monsters
-            .map(value => ({ value, sort: Math.random() }))
-            .sort((a, b) => a.sort - b.sort)
-            .map(({ value }) => value)
+        //this.monsters = this.monsters
+        //    .map(value => ({ value, sort: Math.random() }))
+        //    .sort((a, b) => a.sort - b.sort)
+        //    .map(({ value }) => value)
     }
 
     calculateRanges(){
@@ -564,8 +564,10 @@ class Game{
         for(let note of this.ghostNotes){
             let y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const runUpSpeed = 5.0;
-            let xStart = (this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
-            const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end)
+            const nowTime = Date.now();
+            const time = ((nowTime - this.startTime)/1000.0) - this.startDelay;
+            let xStart = (this.invLerp((note.startTime - time) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
+            const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end) * runUpSpeed
 
             this.canvasContext.beginPath(); // Start a new path
             let fontSize = 40;
@@ -577,7 +579,7 @@ class Game{
             }
 
             //console.log(this.monsters, this.monsters[wrapIndex(note.noteValue, this.monsters.length)], wrapIndex(note.noteValue, this.monsters.length))
-            const monster = String.fromCodePoint(parseInt(this.monsters[wrapIndex(note.noteValue + (salt++) * 13, this.monsters.length)], 16));
+            const monster = String.fromCodePoint(parseInt(this.monsters[wrapIndex(note.noteValue + (salt++ * 3), this.monsters.length)], 16));
 
             function absBounce(x, floor){
                 return Math.abs(x - floor) + floor;
@@ -596,9 +598,9 @@ class Game{
                 if(xStart < swordDistance){
                     xStart = absBounce(xStart, swordDistance);
                     y += xStart * xStart;
-                }else{
-                    fontSize = 80;
                 }
+            }else{
+                fontSize = 80;
             }
             
             const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
@@ -610,6 +612,7 @@ class Game{
         if(this.notes.length < 1) return;
         this.shuffleMonsters();
         this.startTime = Date.now()
+        console.log("startTimeSet", this.startTime);
         this.playing = true;
         //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
         this.notesQueued = []
@@ -697,6 +700,7 @@ ally.init(midiInput, ({ note, noteName, fullNoteName, velocity }) =>{
 });
 
 const songList = {
+    "Toccata and Fugue": "octave 4\nstep 1/8\nA\nG\nstep 2.5/2\nA\n\nstep 1/8\nrest\nrest\nG\nF\nE\nD\nstep 1/2\nC#\nstep 1\nD\nrest\n\noctave 3\nstep 1/8\nA\nG\nstep 2.5/2\nA\n\nstep 1/8\nrest\nrest\nstep 1/4\nE\nF\nC#\nstep 1/2\nD",
     "Heart and Soul": "octave 4\r\nstep 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\noctave 3\r\nB\r\nrest\r\nA\r\nB\r\noctave 4\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nstep 3/4\r\nG\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nA\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nD\r\nstep 5/8\r\nC\r\n\r\noctave 3\r\nstep 1/8\r\nB\r\nstep 1/4\r\nA\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB",
     "None": ""
 }
