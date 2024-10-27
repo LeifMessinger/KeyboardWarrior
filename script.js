@@ -353,7 +353,7 @@ class Game{
         this.end =  1;
         this.darkMode = false;
         this.playing = false;
-        this.bpm = 120
+        this.bpm = 120.0
 
         this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
     }
@@ -543,18 +543,23 @@ class Game{
         for(let note of this.notes){
             this.notesQueued.push(setTimeout(()=>{
                 this.audioPlayer.playNote(note.noteValue)
-            }, note.startTime));
-            this.notesQueued.push(setTimeout(()=>{
+            }, note.startTime * 1000 * (120.0/this.bpm)));
+            //This might silence the user's notes, but better that notes get silenced then notes get sustained forever.
+            setTimeout(()=>{
                 this.audioPlayer.stopNote(note.noteValue)
-            }, note.endTime));
+            }, note.endTime * 1000 * (120.0/this.bpm));
         }
     }
 
     stop(){
+        this.playing = false;
+
         for(let note of this.notesQueued){
             clearTimeout(note);
         }
         this.notesQueued = []
+
+        audioPlayer.stopAll()
     }
 
     playStop(){
@@ -602,7 +607,7 @@ editor.setTheme("ace/theme/monokai");
 //editor.session.setMode("ace/mode/javascript");
 
 const songList = {
-    "Heart and Soul": "octave 4\r\nstep 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\noctave 3\r\nB\r\nrest\r\nA\r\nB\r\noctave 4\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nA\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nD\r\nstep 1/4\r\nC\r\n\r\noctave 3\r\nstep 1/8\r\nrest\r\nB\r\nstep 1/4\r\nA\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB",
+    "Heart and Soul": "octave 4\r\nstep 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\noctave 3\r\nB\r\nrest\r\nA\r\nB\r\noctave 4\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nstep 3/4\r\nG\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nA\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nD\r\nstep 5/8\r\nC\r\n\r\noctave 3\r\nstep 1/8\r\nB\r\nstep 1/4\r\nA\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\nrest\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB",
     "None": ""
 }
 
@@ -632,6 +637,11 @@ function autorun() {
         }
         updateNotes();
         session.on('change', updateNotes);
+
+        canvas.addEventListener('click', ()=>{
+            console.log("bruh")
+            game.playStop();
+        });
         
         game.run()
     }
@@ -644,7 +654,10 @@ function autorun() {
             button.textContent = song;
             button.onclick = () => {
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
-                editor.setValue("");
+
+                // Change this if you don't want the text to be pasted when you switch songs.
+                //editor.setValue("");
+                editor.setValue(songList[song]);
             };
             tab.appendChild(button)
             elm.appendChild(tab);
