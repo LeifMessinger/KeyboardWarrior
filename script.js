@@ -878,6 +878,7 @@ function autorun() {
             button.textContent = song;
             button.onclick = () => {
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
+                game.stop()
 
                 // Change this if you don't want the text to be pasted when you switch songs.
                 //editor.setValue("");
