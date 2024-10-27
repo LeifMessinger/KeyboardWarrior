@@ -619,7 +619,6 @@ class Game{
                 this.audioPlayer.playNote(note.noteValue)
 
                 this.sword.swing = !(this.sword.swing);
-                console.log(this.sword.swing)
                 //this.sword.style.setProperty("scale", this.sword.swing? "1.0 -1.0" : "");
                 this.sword.style.setProperty("transform", this.sword.swing? "rotate(80deg)" : "rotate(-80deg)");
 
