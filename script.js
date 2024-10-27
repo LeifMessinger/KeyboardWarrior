@@ -302,7 +302,7 @@ function parseMusicScript(input) {
                 } else {
                     const octaveStructure = [
                         //Ocatve 0
-                        { note: 60, black: false, key: "C", key:"C" }, // C
+                        { note: 60, black: false, key: "C" }, // C
                         { note: 61, black: true , key:"C#" }, // C#
                         { note: 62, black: false, key:"D" }, // D
                         { note: 63, black: true , key:"D#" }, // D#
@@ -350,17 +350,34 @@ class Game{
         this.end =  1;
         this.highestNote = undefined;
         this.lowestNote = undefined;
+        this.highestNoteLetter = 'C';
+        this.lowestNoteLetter = 'C';
+        this.darkMode = false;
     }
 
     setNotes(notes){
         this.notes = notes ?? this.notes
         this.end = Math.max.apply(undefined, notes.map((note)=>note.endTime))
-        this.highestNote = Math.max.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
-        this.lowestNote = Math.min.apply(undefined, notes.map((note)=>note.noteValue)) ?? 0
+        if(notes.length > 0){
+            const maxNote = notes.reduce((prev, current) => (prev.noteValue > current.noteValue) ? prev : current, );
+            const minNote = notes.reduce((prev, current) => (prev.noteValue < current.noteValue) ? prev : current);
+            
+            this.highestNote = maxNote.noteValue ?? 0;
+            this.lowestNote = minNote.noteValue ?? 0;
+            this.highestNoteLetter = maxNote.noteLetter;
+            this.lowestNoteLetter = minNote.noteLetter;
+        }
 
         if(isNaN(this.end)){
             console.warn("end is NaN. Parsing the script probably failed and put NaN for note.endTime")
         }
+    }
+
+    run(){
+        window.requestAnimationFrame(()=>{
+            this.draw();
+            this.run();
+        });
     }
 
     draw(){
@@ -369,9 +386,15 @@ class Game{
             (!this.lowestNote)){
                 return;
         }
-        
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            this.darkMode = true;
+        }else{
+            this.darkMode = false;
+        }
+
         //Draw background
-        this.canvasContext.fillStyle = "magenta";
+        this.canvasContext.fillStyle = this.darkMode? "black" : "white";
         this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const uvX = (x) => {
@@ -390,7 +413,8 @@ class Game{
         }
 
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
-        const noteHeight = 1.0/(this.highestNote - this.lowestNote);
+        const noteRange = this.highestNote - this.lowestNote;
+        const noteHeight = 1.0/(noteRange + 1);
 
         this.canvasContext.fillStyle = "blue";
         for(let note of this.notes){
@@ -398,10 +422,50 @@ class Game{
             const xStart = invLerp(note.startTime, this.start, this.end)
             const xEnd = invLerp(note.endTime, this.start, this.end)
 
-            const rect = [uvX(xStart), uvY(y), uvX(xEnd - xStart), uvY(noteHeight)];
+            const rect = [uvX(xStart), uvY(y) + 10*Math.sin(note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
             this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
         }
+        
+        //Notes overlay
+        this.canvasContext.globalCompositeOperation = this.darkMode? "lighten" : "darken";
+        this.canvasContext.strokeStyle = "grey";
+        for(let i = 1; i < noteRange + 1; ++i){
+            const y = i * noteHeight;
+            
+            this.canvasContext.beginPath(); // Start a new path
+
+            const lineStart = [0, uvY(y)];
+            this.canvasContext.moveTo(...lineStart); // Move the pen to (30, 50)
+
+            const lineEnd = [uvX(1.0), uvY(y)];
+            this.canvasContext.lineTo(...lineEnd); // Draw a line to (150, 100)
+            
+            this.canvasContext.lineWidth = 2;
+            this.canvasContext.stroke(); // Render the path
+        }
+        
+
+        const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        const highestNotePos = notes.indexOf(this.highestNoteLetter);
+
+        this.canvasContext.fillStyle = "grey";
+        for(let i = 0; i < noteRange + 1; ++i){
+            const y = (i + 1) * noteHeight; //I think text draws from the bottom up, for some reason
+            
+            this.canvasContext.beginPath(); // Start a new path
+
+            const pos = [0, uvY(y) - 5];
+
+            function wrapIndex(index, length) {
+                return ((index % length) + length) % length;
+            }
+
+            const letter = notes[wrapIndex(highestNotePos - (i), notes.length)];
+            this.canvasContext.font = "20px Arial";
+            this.canvasContext.fillText(letter, ...pos);
+        }
+        this.canvasContext.globalCompositeOperation = "source-over";
     }
 }
 
@@ -413,13 +477,13 @@ const piano = new PianoKeyboard('pianoContainer', audioPlayer);
 // Set up event listeners
 midiInput.addEventListener('noteon', (e) => {
     const { note, noteName, fullNoteName, velocity } = e.detail;
-    console.log(`Note On: ${fullNoteName} (${note}) velocity: ${velocity}`);
+    //console.info(`Note On: ${fullNoteName} (${note}) velocity: ${velocity}`);
     piano.setNoteActive(note, true);
 });
 
 midiInput.addEventListener('noteoff', (e) => {
     const { note, noteName, fullNoteName } = e.detail;
-    console.log(`Note Off: ${fullNoteName} (${note})`);
+    //console.info(`Note Off: ${fullNoteName} (${note})`);
     piano.setNoteActive(note, false);
 });
 
@@ -444,6 +508,8 @@ const songList = {
     "Heart and Soul": "step 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\nB\r\nrest\r\nA\r\nB\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\noctave 1\r\nA\r\noctave 0\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nB\r\nstep 1/4\r\nC\r\n\r\nstep 1/8\r\nrest\r\nB\r\nstep 1/4\r\nA\r\noctave -1\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\noctave 0\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB"
 }
 
+
+
 function autorun() {
     const elm = document.getElementById("songList");
     if(elm){
@@ -462,6 +528,13 @@ function autorun() {
     const canvas = document.getElementById("roll");
     const game = new Game(canvas);
     if(canvas){
+        function resizeCanvas(){
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas, false);
+
         const session = editor.getSession();
         function updateNotes(data, data2){
             //There's a lot of cool stuff in here
@@ -478,8 +551,7 @@ function autorun() {
         updateNotes();
         session.on('change', updateNotes);
         
-        game.draw()
-        //window.requestAnimationFrame(()=>{game.draw()});
+        game.run()
     }
 }
 if (document.addEventListener)
