@@ -47,8 +47,8 @@ canvas {
     display: flex;
     justify-content: space-between;
     flex-direction: column-reverse;
-    margin: 20px;
-    height: 80vh;
+    margin: 0;
+    height: 100%;
     width: 120px;
     overflow-y: scroll;
     overflow-x: hidden;

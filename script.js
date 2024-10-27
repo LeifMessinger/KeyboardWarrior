@@ -343,13 +343,17 @@ function parseMusicScript(input) {
 
 class Game{
     constructor(canvas){
+        this.audioPlayer = new AudioPlayer();
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
         this.notes = []
         this.ghostNotes = []
+        this.notesQueued = []
         this.start = 0;
         this.end =  1;
         this.darkMode = false;
+        this.playing = false;
+        this.bpm = 120
 
         this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
     }
@@ -441,6 +445,9 @@ class Game{
     }
 
     draw(){
+        if(this.playing){
+            return this.drawAnimation();
+        }
         if((this.end == 0) ||
             (!this.highestNote) ||
             (!this.lowestNote)){
@@ -523,6 +530,40 @@ class Game{
         }
         this.canvasContext.globalCompositeOperation = "source-over";
     }
+
+    drawAnimation(){
+
+    }
+
+    play(){
+        if(this.notes.length < 1) return;
+        this.playing = true;
+        //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
+        this.notesQueued = []
+        for(let note of this.notes){
+            this.notesQueued.push(setTimeout(()=>{
+                this.audioPlayer.playNote(note.noteValue)
+            }, note.startTime));
+            this.notesQueued.push(setTimeout(()=>{
+                this.audioPlayer.stopNote(note.noteValue)
+            }, note.endTime));
+        }
+    }
+
+    stop(){
+        for(let note of this.notesQueued){
+            clearTimeout(note);
+        }
+        this.notesQueued = []
+    }
+
+    playStop(){
+        if(this.playing){
+            this.stop();
+        }else{
+            this.play();
+        }
+    }
 }
 
 // Initialize the application
@@ -565,8 +606,6 @@ const songList = {
     "None": ""
 }
 
-
-
 function autorun() {
     const canvas = document.getElementById("roll");
     const game = new Game(canvas);
@@ -603,7 +642,7 @@ function autorun() {
             let tab = document.createElement("td");
             let button = document.createElement("button");
             button.textContent = song;
-            button.onclick = ()=>{
+            button.onclick = () => {
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
                 editor.setValue("");
             };
