@@ -30,6 +30,9 @@ textarea {
     bottom: 0;
     left: 0;
 }
+.banner{
+    height: 100px;
+}
 #playStop {
 	background: none;
 	color: inherit;
