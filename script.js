@@ -730,8 +730,8 @@ function autorun() {
                 game.setGhostNotes(parseMusicScript(songList[song]), -1) // moves cursor to the start
 
                 // Change this if you don't want the text to be pasted when you switch songs.
-                //editor.setValue("");
-                editor.setValue(songList[song]);
+                editor.setValue("");
+                //editor.setValue(songList[song]);
             };
             tab.appendChild(button)
             elm.appendChild(tab);
