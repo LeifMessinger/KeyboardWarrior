@@ -534,6 +534,7 @@ class Game{
         const highestNotePos = notes.indexOf(this.highestNoteLetter);
 
         this.canvasContext.fillStyle = "grey";
+        this.canvasContext.textAlign = "left";
         for(let i = 0; i < noteRange + 1; ++i){
             const y = (i + 1) * noteHeight; //I think text draws from the bottom up, for some reason
             
@@ -561,6 +562,8 @@ class Game{
         const noteHeight = 1.0/(noteRange + 1);
 
         let salt = 0;
+        this.canvasContext.textAlign = "center";
+        this.canvasContext.fillStyle = this.darkMode? "black" : "white";
         for(let note of this.ghostNotes){
             let y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const runUpSpeed = 5.0;
@@ -569,7 +572,6 @@ class Game{
             let xStart = (this.invLerp((note.startTime - time) * (120.0/this.bpm), this.start, this.end)) * runUpSpeed;
             const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end) * runUpSpeed
 
-            this.canvasContext.beginPath(); // Start a new path
             let fontSize = 40;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
             this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px serif";
@@ -604,7 +606,15 @@ class Game{
             }
             
             const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
-            this.canvasContext.fillText(monster, rect[0], rect[1]);
+            if(rect[0] <= this.uvX(1.1)){
+                this.canvasContext.beginPath(); // Start a new path
+                this.canvasContext.fillText(monster, rect[0], rect[1]);
+                this.canvasContext.fillText(monster, rect[0], rect[1]);
+            }
+            
+            this.canvasContext.beginPath();
+            this.canvasContext.arc(rect[0], rect[1], 50, 0, 2 * Math.PI);
+            this.canvasContext.stroke();
         }
     }
 
