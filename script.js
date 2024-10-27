@@ -322,7 +322,7 @@ function parseMusicScript(input) {
                         console.error("Note not found:", noteValue);
                         throw "shit";
                     }
-                    const noteValue = (note?.note) + (octave * 12);
+                    const noteValue = (note?.note) + ((octave - 4) * 12);
 
                     notes.push({
                         noteValue,
@@ -505,7 +505,8 @@ editor.setTheme("ace/theme/monokai");
 //editor.session.setMode("ace/mode/javascript");
 
 const songList = {
-    "Heart and Soul": "step 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\nB\r\nrest\r\nA\r\nB\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\noctave 1\r\nA\r\noctave 0\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nB\r\nstep 1/4\r\nC\r\n\r\nstep 1/8\r\nrest\r\nB\r\nstep 1/4\r\nA\r\noctave -1\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\noctave 0\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB"
+    "Heart and Soul": "octave 4\r\nstep 1/8\r\nC\r\nrest\r\nrest\r\nC\r\nrest\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nC\r\noctave 3\r\nB\r\nrest\r\nA\r\nB\r\noctave 4\r\nrest\r\nC\r\nstep 3/8\r\nD\r\n\r\nE\r\nE\r\nstep 1\r\nE\r\n\r\nstep 1/8\r\nE\r\nD\r\nrest\r\nC\r\nD\r\nrest\r\nE\r\nstep 3/8\r\nF\r\nrest\r\nstep 1\r\nC\r\n\r\nstep 1/8\r\nA\r\nG\r\nrest\r\nF\r\nstep 3/8\r\nE\r\nD\r\nstep 1/4\r\nC\r\n\r\noctave 3\r\nstep 1/8\r\nrest\r\nB\r\nstep 1/4\r\nA\r\n\r\nstep 1/8\r\nrest\r\nG\r\nstep 1/4\r\nF\r\nstep 1/8\r\nrest\r\nG\r\nstep 3/8\r\nA\r\nB",
+    "None": ""
 }
 
 
@@ -522,6 +523,10 @@ function autorun() {
             };
             tab.appendChild(button)
             elm.appendChild(tab);
+        }
+        const firstSongText = Object.values(songList)[0];
+        if(firstSongText){
+            editor.setValue(firstSongText, -1);
         }
     }
 
