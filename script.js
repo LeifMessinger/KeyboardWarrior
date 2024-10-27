@@ -592,6 +592,11 @@ class Game{
                 console.log(this.sword.swing)
                 //this.sword.style.setProperty("scale", this.sword.swing? "1.0 -1.0" : "");
                 this.sword.style.setProperty("transform", this.sword.swing? "rotate(80deg)" : "rotate(-80deg)");
+
+                const noteRange = this.highestNote - this.lowestNote;
+                const noteHeight = 1.0/(noteRange + 1);
+                const y = (this.highestNote - note.noteValue) * noteHeight;
+                this.sword.style.setProperty("top", (y * 100.0) + "%");
             }, (note.startTime + this.startDelay) * 1000 * (120.0/this.bpm)));
             //This might silence the user's notes, but better that notes get silenced then notes get sustained forever.
             setTimeout(()=>{
