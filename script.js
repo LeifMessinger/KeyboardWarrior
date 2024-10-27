@@ -481,8 +481,8 @@ class Game{
 
         this.drawBackground();
 
-        this.canvasContext.fillStyle = "blue";
-        this.drawNotes(this.ghostNotes)
+        //this.canvasContext.fillStyle = "blue";
+        //this.drawNotes(this.ghostNotes)
         
         this.canvasContext.fillStyle = this.darkMode? "white" : "black";
         this.drawNotes(this.notes, 0)
@@ -494,6 +494,10 @@ class Game{
 
         //Notes overlay
         this.canvasContext.globalCompositeOperation = this.darkMode? "lighten" : "darken";
+        
+        this.canvasContext.fillStyle = "grey";
+        this.drawNotes(this.ghostNotes)
+
         this.canvasContext.strokeStyle = "grey";
         for(let i = 1; i < noteRange + 1; ++i){
             const y = i * noteHeight;
@@ -565,7 +569,7 @@ class Game{
 
             const rect = [this.uvX(xStart) + this.uvX(.05), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
-            const fontSize = 25;
+            const fontSize = 40;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
             this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px serif";
             
