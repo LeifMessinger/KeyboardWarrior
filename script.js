@@ -706,6 +706,13 @@ function autorun() {
             game.playStop();
         });
         
+        const elm = document.getElementById("playStop");
+        if(elm){
+            elm.addEventListener('click', ()=>{
+                game.playStop();
+            });
+        }
+        
         game.run()
     }
     
