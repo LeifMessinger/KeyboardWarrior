@@ -393,6 +393,37 @@ class Game{
         });
     }
 
+    uvX(x){
+        return x * this.canvas.width
+    }
+    uvY(y){
+        return y * this.canvas.height
+    }
+
+    lerp( a, b, zeroToOne ) {
+        return a + zeroToOne * ( b - a )
+    }
+    invLerp(x, a, b){
+        return (x - a) / (b - a)
+    }
+
+    //you gotta set the this.canvasContext.fillStyle before calling this
+    drawNotes(notes){
+        //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
+        const noteRange = this.highestNote - this.lowestNote;
+        const noteHeight = 1.0/(noteRange + 1);
+
+        for(let note of notes){
+            const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
+            const xStart = this.invLerp(note.startTime, this.start, this.end)
+            const xEnd = this.invLerp(note.endTime, this.start, this.end)
+
+            const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*5*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
+            this.canvasContext.beginPath(); // Start a new path
+            this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
+        }
+    }
+
     draw(){
         if((this.end == 0) ||
             (!this.highestNote) ||
@@ -410,38 +441,14 @@ class Game{
         this.canvasContext.fillStyle = this.darkMode? "black" : "white";
         this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const uvX = (x) => {
-            return x * this.canvas.width
-        }
-        const uvY = (y) => {
-            return y * this.canvas.height
-        }
-        //returns a blend of a and b
-        function lerp( a, b, zeroToOne ) {
-            return a + zeroToOne * ( b - a )
-        }
-        //returns a fraction
-        function invLerp(x, a, b){
-            return (x - a) / (b - a)
-        }
-
-        //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
+        this.canvasContext.fillStyle = "blue";
+        this.drawNotes(this.ghostNotes)
+        
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
         const horPixelSize = (this.canvas.width / this.canvas.clientWidth);
         const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
 
-        this.canvasContext.fillStyle = "blue";
-        for(let note of this.ghostNotes){
-            const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
-            const xStart = invLerp(note.startTime, this.start, this.end)
-            const xEnd = invLerp(note.endTime, this.start, this.end)
-
-            const rect = [uvX(xStart), uvY(y) + (this.canvas.height / 500.0)*5*Math.sin(1.5*note.startTime + (Date.now() / 1000)), uvX(xEnd - xStart), uvY(noteHeight)];
-            this.canvasContext.beginPath(); // Start a new path
-            this.canvasContext.fillRect(...rect); // Add a rectangle to the current path
-        }
-        
         //Notes overlay
         this.canvasContext.globalCompositeOperation = this.darkMode? "lighten" : "darken";
         this.canvasContext.strokeStyle = "grey";
@@ -450,25 +457,25 @@ class Game{
             
             this.canvasContext.beginPath(); // Start a new path
 
-            const lineStart = [0, uvY(y)];
+            const lineStart = [0, this.uvY(y)];
             this.canvasContext.moveTo(...lineStart); // Move the pen to (30, 50)
 
-            const lineEnd = [uvX(1.0), uvY(y)];
+            const lineEnd = [this.uvX(1.0), this.uvY(y)];
             this.canvasContext.lineTo(...lineEnd); // Draw a line to (150, 100)
             
-            this.canvasContext.lineWidth = 2;
+            this.canvasContext.lineWidth = 1 * vertPixelSize;
             this.canvasContext.stroke(); // Render the path
         }
         
         for(let i = 0; i < this.end * 4; ++i){
-            const x = invLerp(i / 4.0, this.start, this.end);
+            const x = this.invLerp(i / 4.0, this.start, this.end);
 
             this.canvasContext.beginPath(); // Start a new path
 
-            const lineStart = [uvX(x), 0];
+            const lineStart = [this.uvX(x), 0];
             this.canvasContext.moveTo(...lineStart); // Move the pen to (30, 50)
 
-            const lineEnd = [uvX(x), uvY(1.0)];
+            const lineEnd = [this.uvX(x), this.uvY(1.0)];
             this.canvasContext.lineTo(...lineEnd); // Draw a line to (150, 100)
             
             this.canvasContext.lineWidth = ((i % 4 == 0)? 2 : 1) * horPixelSize * .70;
@@ -491,7 +498,7 @@ class Game{
 
             const letter = notes[wrapIndex(highestNotePos - (i), notes.length)];
             const fontSize = 20;
-            const pos = [0, uvY(y) - ((uvY(noteHeight) - fontSize)/2.0)];
+            const pos = [0, this.uvY(y) - ((this.uvY(noteHeight) - fontSize)/2.0)];
             this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px Arial";
             this.canvasContext.fillText(letter, ...pos);
         }
