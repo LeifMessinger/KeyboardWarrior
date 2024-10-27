@@ -354,6 +354,7 @@ class Game{
         this.end =  1;
         this.darkMode = false;
         this.playing = false;
+        this.startTime = Date.now()
         this.bpm = 120.0;
         this.startDelay = .5;
         this.sword = document.getElementById("sword");
@@ -446,8 +447,8 @@ class Game{
 
         for(let note of notes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
-            const xStart = this.invLerp(note.startTime, this.start, this.end)
-            const xEnd = this.invLerp(note.endTime, this.start, this.end)
+            const xStart = this.invLerp(note.startTime * (120.0/this.bpm), this.start, this.end)
+            const xEnd = this.invLerp(note.endTime * (120.0/this.bpm), this.start, this.end)
 
             const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
@@ -556,8 +557,8 @@ class Game{
         let salt = 0;
         for(let note of this.notes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
-            const xStart = this.invLerp(note.startTime, this.start, this.end)
-            const xEnd = this.invLerp(note.endTime, this.start, this.end)
+            const xStart = this.invLerp((note.startTime + this.startDelay - ((Date.now() - this.startTime)/1000.0)) * (120.0/this.bpm), this.start, this.end)
+            const xEnd = this.invLerp(note.endTime + this.startDelay * (120.0/this.bpm), this.start, this.end)
 
             const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
@@ -578,6 +579,7 @@ class Game{
     play(){
         if(this.notes.length < 1) return;
         this.shuffleMonsters();
+        this.startTime = Date.now()
         this.playing = true;
         //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
         this.notesQueued = []
