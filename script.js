@@ -366,6 +366,7 @@ class Game{
             this.lowestNote = minNote.noteValue ?? 0;
             this.highestNoteLetter = maxNote.noteLetter;
             this.lowestNoteLetter = minNote.noteLetter;
+
         }
 
         if(isNaN(this.end)){
@@ -415,6 +416,8 @@ class Game{
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
+        const horPixelSize = (this.canvas.width / 1080.0);
+        const vertPixelSize = (this.canvas.height / 500.0);
 
         this.canvasContext.fillStyle = "blue";
         for(let note of this.notes){
@@ -445,6 +448,21 @@ class Game{
             this.canvasContext.stroke(); // Render the path
         }
         
+        for(let i = 0; i < this.end * 4; ++i){
+            const x = invLerp(i / 4.0, this.start, this.end);
+
+            this.canvasContext.beginPath(); // Start a new path
+
+            const lineStart = [uvX(x), 0];
+            this.canvasContext.moveTo(...lineStart); // Move the pen to (30, 50)
+
+            const lineEnd = [uvX(x), uvY(1.0)];
+            this.canvasContext.lineTo(...lineEnd); // Draw a line to (150, 100)
+            
+            this.canvasContext.lineWidth = ((i % 4 == 0)? 2 : 1) * horPixelSize;
+            this.canvasContext.stroke(); // Render the path
+        }
+        
 
         const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
         const highestNotePos = notes.indexOf(this.highestNoteLetter);
@@ -455,14 +473,14 @@ class Game{
             
             this.canvasContext.beginPath(); // Start a new path
 
-            const pos = [0, uvY(y) - 5];
-
             function wrapIndex(index, length) {
                 return ((index % length) + length) % length;
             }
 
             const letter = notes[wrapIndex(highestNotePos - (i), notes.length)];
-            this.canvasContext.font = "20px Arial";
+            const fontSize = 20;
+            const pos = [0, uvY(y) - ((uvY(noteHeight) - fontSize)/2.0)];
+            this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px Arial";
             this.canvasContext.fillText(letter, ...pos);
         }
         this.canvasContext.globalCompositeOperation = "source-over";
@@ -534,8 +552,8 @@ function autorun() {
     const game = new Game(canvas);
     if(canvas){
         function resizeCanvas(){
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
+            canvas.width = canvas.clientWidth * 2;
+            canvas.height = canvas.clientHeight * 2;
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas, false);
