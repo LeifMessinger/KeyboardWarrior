@@ -346,7 +346,7 @@ class Game{
         this.audioPlayer = new AudioPlayer();
         this.canvas = canvas
         this.canvasContext = canvas.getContext("2d");
-        this.monsters = Array.from("👹👺👻💀👽👾🤖👿😈🧛🧟🧙🕷️🦇").filter((str)=>str.length > 1)
+        this.monsters = ["1f479", "1f47a", "1f47b", "1f480", "1f47d", "1f47e", "1f916", "1f47f", "1f608", "1f9db", "1f9df", "1f9d9", "1f577", "1f987"]; //Array.from("👹👺👻💀👽👾🤖👿😈🧛🧟🧙🕷️🦇").filter((str)=>str.length > 1)
         this.notes = []
         this.ghostNotes = []
         this.notesQueued = []
@@ -355,6 +355,7 @@ class Game{
         this.darkMode = false;
         this.playing = false;
         this.bpm = 120.0;
+        this.startDelay = .5;
         this.sword = document.getElementById("sword");
 
         this.calculateRanges(); //sets highestNote, lowestNote, highestNoteLetter, lowestNoteLetter, end
@@ -454,6 +455,11 @@ class Game{
         }
     }
 
+    drawBackground(){
+        this.canvasContext.fillStyle = this.darkMode? "black" : "white";
+        this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     draw(){
         if(this.playing){
             return this.drawAnimation();
@@ -470,9 +476,7 @@ class Game{
             this.darkMode = false;
         }
 
-        //Draw background
-        this.canvasContext.fillStyle = this.darkMode? "black" : "white";
-        this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.drawBackground();
 
         this.canvasContext.fillStyle = "blue";
         this.drawNotes(this.ghostNotes)
@@ -543,10 +547,13 @@ class Game{
 
     //Draw gouls
     drawAnimation(shake = 5.0){
+        this.drawBackground();
+
         //This is in game space, from (0,0) in the top left corner, to (1,1) in the bottom right corner.
         const noteRange = this.highestNote - this.lowestNote;
         const noteHeight = 1.0/(noteRange + 1);
 
+        let salt = 0;
         for(let note of this.notes){
             const y = (this.highestNote - note.noteValue) * noteHeight;  //This should always yield a >= 0 value
             const xStart = this.invLerp(note.startTime, this.start, this.end)
@@ -554,15 +561,17 @@ class Game{
 
             const rect = [this.uvX(xStart), this.uvY(y) + (this.canvas.height / 500.0)*shake*Math.sin(1.5*note.startTime + (Date.now() / 1000)), this.uvX(xEnd - xStart), this.uvY(noteHeight)];
             this.canvasContext.beginPath(); // Start a new path
-            const fontSize = 20;
+            const fontSize = 25;
             const vertPixelSize = (this.canvas.height / this.canvas.clientHeight);
-            this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px Arial";
+            this.canvasContext.font = parseInt(fontSize*vertPixelSize) + "px serif";
             
             function wrapIndex(index, length) {
                 return ((index % length) + length) % length;
             }
 
-            this.canvasContext.fillText(this.monsters[wrapIndex(note.noteValue, this.monsters.length)], rect[0], rect[1]);
+            //console.log(this.monsters, this.monsters[wrapIndex(note.noteValue, this.monsters.length)], wrapIndex(note.noteValue, this.monsters.length))
+            const monster = String.fromCodePoint(parseInt(this.monsters[wrapIndex(note.noteValue + (salt++) * 13, this.monsters.length)], 16));
+            this.canvasContext.fillText(monster, rect[0], rect[1]);
         }
     }
 
@@ -572,7 +581,7 @@ class Game{
         this.playing = true;
         //We don't need "notesBeingPlayed" because we can `stopAll()` with the audioPlayer, but we do need to stop new notes from being played
         this.notesQueued = []
-        this.sword.swing = true;
+        //this.sword.swing = false;
         for(let note of this.notes){
             this.notesQueued.push(setTimeout(()=>{
                 this.audioPlayer.playNote(note.noteValue)
@@ -581,11 +590,11 @@ class Game{
                 console.log(this.sword.swing)
                 //this.sword.style.setProperty("scale", this.sword.swing? "1.0 -1.0" : "");
                 this.sword.style.setProperty("transform", this.sword.swing? "rotate(80deg)" : "rotate(-80deg)");
-            }, note.startTime * 1000 * (120.0/this.bpm)));
+            }, (note.startTime + this.startDelay) * 1000 * (120.0/this.bpm)));
             //This might silence the user's notes, but better that notes get silenced then notes get sustained forever.
             setTimeout(()=>{
                 this.audioPlayer.stopNote(note.noteValue)
-            }, note.endTime * 1000 * (120.0/this.bpm));
+            }, (note.endTime + this.startDelay) * 1000 * (120.0/this.bpm));
         }
         this.sword.style.setProperty("display", "block");
     }

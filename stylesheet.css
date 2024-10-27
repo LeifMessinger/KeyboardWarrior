@@ -43,7 +43,7 @@ canvas {
 #sword {
     position: absolute;
     width: 10%;
-    transform: rotate(-45deg);
+    transform: rotate(-80deg);
     transition: transform .1s;
     transform-origin: 10% 50%;
     display: none;
